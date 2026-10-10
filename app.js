@@ -29,6 +29,34 @@ const orderRows = [
   ["卖出", "待撤", "空头交易", "DEMO-1005", "QFII-D", "300264.SZ", "HighTouch", "8.85", "100"],
 ];
 
+const riskRules = [
+  { id: 858, enabled: false, category: "交易事前", type: "禁止交易", account: "", note: "自动限制期货平仓", scope: "个人", start: "" },
+  { id: 857, enabled: false, category: "交易事前", type: "禁止交易", account: "", note: "自动限制期货开仓", scope: "个人", start: "" },
+  { id: 856, enabled: false, category: "交易事前", type: "黑名单", account: "", note: "限制指定证券范围", scope: "个人", start: "" },
+  { id: 855, enabled: false, category: "交易事前", type: "白名单", account: "", note: "仅允许指定证券范围", scope: "个人", start: "2026-09-23" },
+  { id: 854, enabled: false, category: "交易事前", type: "单笔委托数量", account: "", note: "", scope: "全局", start: "2026-09-23" },
+  { id: 853, enabled: false, category: "交易事前", type: "价格偏离度", account: "", note: "", scope: "全局", start: "2026-09-23" },
+  { id: 852, enabled: false, category: "交易事前", type: "下单频率", account: "", note: "", scope: "个人", start: "2026-09-23" },
+  { id: 851, enabled: true, category: "交易事前", type: "可用名本集中度", account: "", note: "", scope: "个人", start: "2026-09-23" },
+  { id: 850, enabled: false, category: "交易事前", type: "持仓限制", account: "", note: "", scope: "全局", start: "2026-09-23" },
+  { id: 849, enabled: false, category: "交易事中", type: "净卖出金额", account: "", note: "", scope: "全局", start: "2026-09-23" },
+  { id: 848, enabled: false, category: "交易事中", type: "净风险敞口", account: "", note: "", scope: "全局", start: "2026-09-23" },
+  { id: 847, enabled: false, category: "交易事中", type: "集中度控制", account: "", note: "", scope: "个人", start: "2026-09-23" },
+  { id: 846, enabled: false, category: "交易事中", type: "标的市值", account: "", note: "", scope: "个人", start: "2026-09-23" },
+  { id: 845, enabled: false, category: "资管事前", type: "对敲交易", account: "QFII-DEMO", note: "控制层级：Slice", scope: "--", start: "2026-09-23" },
+  { id: 844, enabled: false, category: "资管事前", type: "反向交易", account: "QFII-DEMO", note: "控制渠道：QFII", scope: "--", start: "2026-09-23" },
+  { id: 843, enabled: false, category: "资管事前", type: "NAV集中度", account: "QFII-DEMO", note: "", scope: "--", start: "2026-09-23" },
+  { id: 842, enabled: false, category: "资管事前", type: "NAV单笔订单市值", account: "QFII-DEMO", note: "", scope: "--", start: "2026-09-23" },
+  { id: 841, enabled: false, category: "资管事前", type: "委托量占比", account: "QFII-DEMO", note: "", scope: "--", start: "2026-09-23" },
+];
+
+const childOrders = {};
+const tradeExecutions = {};
+const approvalRows = [
+  ["AP-20261010-001", "ORD-DEMO-01", "2026-10-10", "10:16:28", "委托（Slice）", "待审批", "否", "000001.SZ", "限价单", "2,000", "10.80", "买入"],
+  ["AP-20261010-002", "ORD-DEMO-02", "2026-10-10", "10:21:06", "委托（Slice）", "待审批", "是", "600000.SH", "限价单", "5,000", "9.52", "卖出"],
+];
+
 let state = {
   view: "market",
   direction: "buy",
@@ -36,6 +64,14 @@ let state = {
   price: 10.80,
   quantity: 0,
   orderMode: "HighTouch",
+  tradeType: "普通交易",
+  noApproval: false,
+  manualOrder: false,
+  selectedOrder: 0,
+  modal: null,
+  approvalTab: "待审批事项",
+  selectedApproval: 0,
+  riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
 };
@@ -54,8 +90,8 @@ document.querySelectorAll(".nav-item").forEach((item) => {
 });
 
 function navigate(view) {
-  if (["strategy", "approval", "system"].includes(view)) {
-    notify(`${view === "strategy" ? "策略" : view === "approval" ? "审批" : "系统"}模块待补充截图后继续复刻`);
+  if (["strategy", "system"].includes(view)) {
+    notify(`${view === "strategy" ? "策略" : "系统"}模块待补充截图后继续复刻`);
     return;
   }
   state.view = view;
@@ -64,8 +100,8 @@ function navigate(view) {
 
 function render() {
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === state.view));
-  const views = { market: marketView, orders: ordersView, lending: lendingView, data: dataView, risk: riskView, config: configView };
-  workspace.innerHTML = views[state.view]();
+  const views = { market: marketView, orders: ordersView, lending: lendingView, data: dataView, risk: riskView, config: configView, approval: approvalView };
+  workspace.innerHTML = views[state.view]() + modalView();
   bindInteractions();
 }
 
@@ -124,22 +160,30 @@ function bookRows(side) {
 
 function orderForm() {
   const isBuy = state.direction === "buy";
+  const isShort = state.tradeType === "空头交易";
+  const isExposure = state.tradeType === "敞口控制交易";
+  const isArbitrage = ["自设套利", "标准套利"].includes(state.tradeType);
+  const directionLabels = isShort ? ["卖开", "买平"] : ["买入", "卖出"];
   return `<section class="panel order-panel">
     <h2>交易下单</h2>
-    <div class="trade-tabs"><button class="active">普通交易</button><button>空头交易</button><button>敞口控制交易</button></div>
-    <div class="mini-tabs"><button>自设套利</button><button>标准套利</button></div>
-    <label class="form-row"><span class="form-label">资金账号</span><select class="form-control"><option>DEMO-1001</option></select></label>
-    <label class="form-row"><span class="form-label">对冲渠道</span><select class="form-control"><option>请选择</option></select></label>
+    <div class="trade-tabs">${["普通交易", "空头交易", "敞口控制交易"].map(x=>`<button data-trade-type="${x}" class="${state.tradeType===x?"active":""}">${x}</button>`).join("")}</div>
+    <div class="mini-tabs">${["自设套利", "标准套利"].map(x=>`<button data-trade-type="${x}" class="${state.tradeType===x?"active":""}">${x}</button>`).join("")}</div>
+    ${!isExposure ? `<label class="form-row"><span class="form-label">资金账号</span><select class="form-control"><option>DEMO-1001</option></select></label>` : ""}
+    ${isExposure ? `<label class="form-row"><span class="form-label required">对冲渠道</span><select class="form-control"><option>QFII-DEMO</option></select></label><label class="form-row"><span class="form-label required">对冲账号</span><select class="form-control"><option>HEDGE-DEMO01</option></select></label>` : `<label class="form-row"><span class="form-label">对冲渠道</span><select class="form-control"><option>自动路由</option><option>QFII-DEMO</option></select></label>`}
     <label class="form-row"><span class="form-label">框架名称</span><select class="form-control"><option>DEMO-FRAME</option></select></label>
+    ${isShort ? `<label class="form-row"><span class="form-label">券源编号</span><input class="form-control" placeholder="未填写时自动匹配"></label>` : ""}
+    ${isArbitrage ? `<label class="form-row"><span class="form-label">组合${state.tradeType==="自设套利"?"名称":"代码"}</span><select class="form-control"><option>DEMO-SPREAD-01</option></select></label>` : ""}
     <label class="form-row"><span class="form-label">订单类型</span><select class="form-control"><option>限价单</option></select></label>
-    <label class="form-row"><span class="form-label">标的代码</span><select class="form-control"><option>000001.SZ 平安银行</option></select></label>
-    <div class="form-row"><span class="form-label">订单方向</span><div class="direction-toggle"><button data-direction="buy" class="buy ${isBuy ? "active" : ""}">买入</button><button data-direction="sell" class="sell ${!isBuy ? "active" : ""}">卖出</button></div></div>
+    ${!isArbitrage ? `<label class="form-row"><span class="form-label">标的代码</span><select class="form-control"><option>000001.SZ 平安银行</option></select></label>` : ""}
+    <div class="form-row"><span class="form-label">订单方向</span><div class="direction-toggle"><button data-direction="buy" class="buy ${isBuy ? "active" : ""}">${directionLabels[0]}</button><button data-direction="sell" class="sell ${!isBuy ? "active" : ""}">${directionLabels[1]}</button></div></div>
     <div class="form-row"><span class="form-label">订单价格</span><div class="stepper"><button data-step="price" data-delta="-0.01">−</button><input id="priceInput" value="${state.price.toFixed(2)}" /><button data-step="price" data-delta="0.01">＋</button></div></div>
     <div class="form-row"><span class="form-label">委托数量</span><div class="stepper"><button data-step="quantity" data-delta="-100">−</button><input id="qtyInput" value="${state.quantity}" /><button data-step="quantity" data-delta="100">＋</button></div></div>
     <div class="qty-hint">可买数量 <b>${isBuy ? "25,000" : "0"}</b></div>
     <div class="fractions"><button data-fraction=".25">1/4</button><button data-fraction=".3333">1/3</button><button data-fraction=".5">1/2</button><button data-fraction="1">全仓</button></div>
     <label class="form-row"><span class="form-label">订单模式</span><select class="form-control" id="orderModeSelect">${["ALL", "HighTouch", "LowTouch"].map(x => `<option ${x === state.orderMode ? "selected" : ""}>${x}</option>`).join("")}</select></label>
-    <div class="mode-hint">${state.orderMode === "HighTouch" ? "需交易员人工确认后下发" : state.orderMode === "LowTouch" ? "原型仅演示直接提交结果" : "按系统已配置的适用规则处理"}</div>
+    <div class="mode-hint">${state.orderMode === "HighTouch" ? "需交易员接收确认，可直接下单或拆单" : state.orderMode === "LowTouch" ? "校验通过后自动进入报单流程" : "按系统已配置的适用规则处理"}</div>
+    ${state.orderMode === "HighTouch" ? `<label class="check-row"><input id="noApproval" type="checkbox" ${state.noApproval?"checked":""}> 无需审批 <span>仍执行风控及验资验券</span></label>` : ""}
+    <label class="check-row"><input id="manualOrder" type="checkbox" ${state.manualOrder?"checked":""}> 手工单 ${state.manualOrder?`<input class="inline-time" type="time" value="10:18">`:""}</label>
     <div class="order-actions"><button class="icon-action" title="设置">⚙</button><button class="icon-action" title="重置" id="resetOrder">⟳</button><button class="submit-order ${isBuy ? "" : "sell"}" id="submitOrder">${isBuy ? "买入" : "卖出"}</button></div>
   </section>`;
 }
@@ -160,13 +204,29 @@ function ordersView() {
         </div>
         <div class="table-wrap"><table class="data-table"><colgroup><col style="width:45px"><col style="width:75px"><col style="width:90px"><col style="width:80px"><col style="width:80px"><col style="width:95px"><col style="width:145px"><col style="width:155px"><col style="width:110px"><col style="width:95px"><col style="width:85px"><col style="width:90px"></colgroup>
           <thead><tr><th>序列</th><th>☐</th><th>操作</th><th>订单方向</th><th>订单状态</th><th>业务类型</th><th>资金账号名称</th><th>框架名称</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th></tr></thead>
-          <tbody>${orderRows.map((r, i) => `<tr><td>${i + 1}</td><td class="center">□</td><td class="center">${r[1] === "待确认" ? `<button class="table-action" data-approve-order="${i}">确认</button>` : ""}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+          <tbody>${orderRows.map((r, i) => `<tr data-order-row="${i}" class="${i===state.selectedOrder?"selected":""}"><td>${i + 1}</td><td class="center">□</td><td class="center">${orderActionButtons(r,i)}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
         <div class="table-footer">第 1 / 9 页, 共 165 条 <select class="select-field" style="min-width:80px"><option>20条/页</option></select><span class="pager">|‹ ‹ › ›|</span></div>
       </section>
-      <div class="split-panels">${emptyPanel("对冲成交列表", ["序列", "标的代码", "成交编号"])}${emptyPanel("对冲委托订单", ["序列", "操作", "子单编号", "标的代码", "标的名称"])}</div>
+      <div class="split-panels">${executionPanel(state.selectedOrder)}${childOrderPanel(state.selectedOrder)}</div>
     </div>
     ${tradeSidePanel()}
   </section>`;
+}
+
+function orderActionButtons(row, index) {
+  if (row[1] === "待确认") return `<button class="table-action" data-approve-order="${index}">确认</button>`;
+  if (row[1] === "已确认") return `<button class="table-action compact-action" data-direct-order="${index}">直接下单</button><button class="table-action compact-action ghost-action" data-split-order="${index}">拆单</button>`;
+  return "";
+}
+
+function childOrderPanel(index) {
+  const rows = childOrders[index] || [];
+  return `<section class="panel empty-table-panel"><div class="panel-title">对冲委托订单 <span class="panel-note">联动母单：${orderRows[index]?.[3] || "--"}</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>序列</th><th>操作</th><th>子单编号</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th><th>状态</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><button class="link-button" data-manual-fill="${index}:${i}">${r.manual?"成交":"撤单"}</button></td>${r.values.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table>${rows.length?"":`<div class="empty-hint">确认母单后，使用“直接下单”或“拆单”生成子单</div>`}</div></section>`;
+}
+
+function executionPanel(index) {
+  const rows = tradeExecutions[index] || [];
+  return `<section class="panel empty-table-panel"><div class="panel-title">对冲成交列表</div><div class="table-wrap"><table class="data-table"><thead><tr><th>序列</th><th>标的代码</th><th>成交编号</th><th>成交价格</th><th>成交数量</th><th>成交类型</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table>${rows.length?"":`<div class="empty-hint">选择母单后联动展示成交明细</div>`}</div></section>`;
 }
 
 function emptyPanel(title, columns) {
@@ -209,10 +269,10 @@ function dataView() {
 function riskView() {
   const tabs = ["风控设置", "自定义风控设置", "风控消息", "强平执行", "强平监控"];
   if (state.riskTab === "风控消息") return riskMessageView(tabs);
-  const types = ["禁止交易", "禁止交易", "禁止交易", "禁止交易", "NAV单笔订单市值", "NAV集中度", "可用名本集中度", "下单频率", "价格偏离度", "价格偏离度", "单笔委托数量", "白名单", "黑名单", "NAV单笔订单市值", "禁止交易", "禁止交易", "禁止交易", "禁止交易", "禁止交易", "禁止交易", "禁止交易"];
+  const visibleRules = state.riskCategory === "全部规则" ? riskRules : riskRules.filter(r=>r.category===state.riskCategory);
   return `<section class="view panel risk-view"><div class="top-tabs">${tabs.map(x=>`<button class="top-tab ${x===state.riskTab?"active":""}" data-risk-tab="${x}">${x}</button>`).join("")}</div>
-    <div class="toolbar"><span class="clearable"><input class="field"></span><button class="btn primary">查询</button><span class="toolbar-spacer"></span><button class="btn primary">新增规则</button></div>
-    <div class="table-wrap"><table class="data-table"><thead><tr><th style="width:50px">序列</th><th style="width:130px">操作</th><th style="width:100px">规则编号</th><th style="width:80px">启用状态</th><th>风控类型</th><th style="width:100px">交易账号</th><th>备注</th><th style="width:120px">应用客户范围</th><th style="width:100px">作用起始日</th></tr></thead><tbody>${types.map((t,i)=>`<tr class="${i===8?"selected":""}"><td>${i+1}</td><td class="center"><span class="toggle ${i===8?"on":""}" data-toggle></span><span class="icon-pair">▣ ↗</span></td><td>${858-i}</td><td>False</td><td>${t}</td><td>${[4,5,13].includes(i)?"TESTCMHK":""}</td><td>${i<3?(i===0?"自动限制期货平仓":i===1?"自动限制期货开仓":"手动限制期货开仓"):i>13?"手动禁用期货开仓":""}</td><td>${[4,5,13].includes(i)?"--":i===8||i===9||i===10?"全局":"个人"}</td><td class="date-orange">${i>2?"2026-09-23":""}</td></tr>`).join("")}</tbody></table></div>
+    <div class="toolbar"><select class="select-field" id="riskCategory">${["全部规则","交易事前","交易事中","资管事前"].map(x=>`<option ${x===state.riskCategory?"selected":""}>${x}</option>`).join("")}</select><span class="clearable"><input class="field" placeholder="规则编号 / 风控类型"></span><button class="btn primary">查询</button><span class="toolbar-note">规则不提供编辑；变更时关闭旧规则并新增</span><span class="toolbar-spacer"></span><button class="btn primary" id="addRiskRule">新增规则</button></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th style="width:50px">序列</th><th style="width:130px">操作</th><th style="width:100px">规则编号</th><th style="width:80px">启用状态</th><th style="width:90px">规则分类</th><th>风控类型</th><th style="width:110px">交易账号</th><th>备注</th><th style="width:120px">应用客户范围</th><th style="width:100px">作用起始日</th></tr></thead><tbody>${visibleRules.map((r,i)=>`<tr class="${r.enabled?"selected":""}"><td>${i+1}</td><td class="center"><span class="toggle ${r.enabled?"on":""}" data-risk-toggle="${r.id}"></span><button class="icon-button" data-risk-delete="${r.id}" title="删除">⌫</button><button class="icon-button" data-risk-export="${r.id}" title="导出">↗</button></td><td>${r.id}</td><td>${r.enabled?"True":"False"}</td><td>${r.category}</td><td>${r.type}</td><td>${r.account}</td><td>${r.note}</td><td>${r.scope}</td><td class="date-orange">${r.start}</td></tr>`).join("")}</tbody></table></div>
   </section>`;
 }
 
@@ -230,10 +290,24 @@ function riskMessageView(tabs) {
 function configView() {
   const tabs = ["购买力账号", "柜台账号映射", "券池映射", "标的物映射", "期货开仓", "订单模式", "证券池", "流量控制", "内部撮合", "组合配置"];
   if (state.configTab === "订单模式") return orderModeConfigView(tabs);
+  if (state.configTab === "柜台账号映射") return counterMappingView(tabs);
   const rows = [["99990109","演示客户01","P99990109","CNY"],["111111","演示客户02","P111111","CNY"],["778899","demo_test","P778899","CNY"],["2262403045","客户A","P2262403045","CNY"],["1069991","客户B","P1069991","CNY"],["11111","客户C（空头）","P11111","CNY"],["112233","lcw_test","P112233","CNY"],["20251208","20251208","P20251208","CNY"],["10000037","ccf2","P10000037","CNY"],["122901","客户D（空头）2","P122901","CNY"],["494657","test_party_494657","P494657","CNY"],["666","marsT","P666","CNY"],["1100274","演示客户03","P1100274","USD"],["1100374","演示客户04","P1100374","CNY"],["1112423","YYQ1","P1112423","CNY"],["80888192","80888192","P80888192","CNY"]];
   return `<section class="view panel config-view"><div class="top-tabs">${tabs.map(x=>`<button class="top-tab ${x===state.configTab?"active":""}" data-config-tab="${x}">${x}</button>`).join("")}</div>
     <div class="toolbar"><span class="clearable"><input class="field"></span><button class="btn primary">查询</button><button class="btn primary">新增</button></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th style="width:120px">操作</th><th style="width:200px">客户账号</th><th style="width:200px">客户名称</th><th style="width:200px">购买力资金账号</th><th>购买力货币</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===9?"selected":""}"><td class="center"><span class="icon-pair">● ▣</span></td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
+}
+
+function counterMappingView(tabs) {
+  const rows = [
+    ["演示客户01", "DEMO-1001", "深交所", "QFII-DEMO", "HEDGE-DEMO01", "是", "SZ:{code}"],
+    ["演示客户02", "DEMO-1002", "上交所", "CHANNEL-B", "HEDGE-DEMO02", "否", "SH:{code}"],
+    ["演示客户03", "DEMO-1003", "港交所", "CHANNEL-C", "HEDGE-DEMO03", "否", "HK:{code}"],
+  ];
+  return `<section class="view panel config-view"><div class="top-tabs">${tabs.map(x=>`<button class="top-tab ${x===state.configTab?"active":""}" data-config-tab="${x}">${x}</button>`).join("")}</div>
+    <div class="toolbar"><input class="field" placeholder="客户账号 / 资金账号"><button class="btn primary">查询</button><button class="btn primary">新增</button><button class="btn ghost">导入</button><button class="btn ghost">导出</button><span class="toolbar-note">双击记录进入编辑</span></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th style="width:90px">操作</th><th>客户名称</th><th>资金账号</th><th>交易所</th><th>对冲渠道</th><th>交易账号</th><th>默认渠道</th><th>标的物代码规则</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?"selected":""}" data-mapping-row><td class="center"><button class="icon-button" title="删除">⌫</button></td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="config-footnote">智能路由仅使用同时存在于柜台账号映射和报单排序模板中的渠道；存在默认渠道时优先按默认渠道处理。</div>
+  </section>`;
 }
 
 function orderModeConfigView(tabs) {
@@ -243,8 +317,63 @@ function orderModeConfigView(tabs) {
     <div class="table-wrap"><table class="data-table"><thead><tr><th style="width:120px">操作</th><th>客户账号</th><th>客户名称</th><th>资金账号</th><th>交易所</th><th>订单模式</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?"selected":""}"><td class="center"><span class="icon-pair">✎ ▣</span></td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
 }
 
+function approvalView() {
+  const pending = state.approvalTab === "待审批事项";
+  const rows = pending ? approvalRows.filter(r=>r[5]==="待审批") : approvalRows.filter(r=>r[5]!=="待审批");
+  const selected = approvalRows[state.selectedApproval] || approvalRows[0];
+  const details = selected ? [["资管初审", selected[5], pending?"--":"审批员A", pending?"--":"2026-10-10 10:25:18", pending?"当前节点":"已完成", "订单数据未修改"], ["资管复核", "待处理", "--", "--", "后续节点", "--"]] : [];
+  return `<section class="view panel approval-view">
+    <div class="top-tabs">${["待审批事项","已审批事项"].map(x=>`<button class="top-tab ${x===state.approvalTab?"active":""}" data-approval-tab="${x}">${x}</button>`).join("")}</div>
+    <div class="toolbar"><input class="field" placeholder="委托编号"><button class="btn primary">查询</button><span class="toolbar-spacer"></span>${pending?`<button class="btn ghost" id="approvalDetail">查看详情</button><button class="btn danger" id="rejectApproval">审批拒绝</button><button class="btn primary" id="passApproval">审批通过</button>`:""}</div>
+    <section class="approval-list"><div class="panel-title">${state.approvalTab}</div><div class="table-wrap"><table class="data-table"><thead><tr><th>审批序号</th><th>委托编号</th><th>发起日期</th><th>发起时间</th><th>审批类别</th><th>审批状态</th><th>是否改单</th><th>标的</th><th>订单类型</th><th>数量</th><th>价格</th><th>方向</th></tr></thead><tbody>${rows.map(r=>{const idx=approvalRows.indexOf(r);return `<tr data-approval-row="${idx}" class="${idx===state.selectedApproval?"selected":""}">${r.map(v=>`<td>${v}</td>`).join("")}</tr>`}).join("")}</tbody></table>${rows.length?"":`<div class="empty-hint">暂无${state.approvalTab}</div>`}</div></section>
+    <section class="approval-detail"><div class="panel-title">审批明细 <span class="panel-note">${selected?.[1]||"--"}</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>审批节点</th><th>审批结果</th><th>审批人</th><th>审批时间</th><th>当前节点</th><th>审批前后数据</th></tr></thead><tbody>${details.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>
+  </section>`;
+}
+
+function modalView() {
+  if (!state.modal) return "";
+  const close = `<button class="modal-close" data-close-modal aria-label="关闭">×</button>`;
+  if (state.modal.type === "risk-rule") return `<div class="modal-mask"><section class="dialog wide-dialog"><header><h3>新增风控规则</h3>${close}</header><div class="dialog-body form-grid">
+    <label><span>规则分类</span><select id="newRiskCategory"><option>交易事前</option><option>交易事中</option><option>资管事前</option></select></label>
+    <label><span>风控类型</span><select id="newRiskType"><option>禁止交易</option><option>黑名单</option><option>白名单</option><option>单笔委托数量</option><option>价格偏离度</option><option>下单频率</option><option>可用名本集中度</option><option>NAV集中度</option><option>NAV单笔订单市值</option><option>对敲交易</option><option>反向交易</option><option>委托量占比</option></select></label>
+    <label><span>应用客户范围</span><select><option>个人</option><option>全局</option></select></label>
+    <label><span>客户列表</span><input placeholder="请选择客户"></label>
+    <label><span>资金账号名称</span><input placeholder="请选择资金账号"></label>
+    <label><span>框架名称</span><input placeholder="请选择框架"></label>
+    <label><span>证券范围类型/列表</span><input placeholder="全部 / 标的 / 证券池 / 市场"></label>
+    <label><span>交易账号</span><input id="newRiskAccount" placeholder="可选"></label>
+    <label><span>控制渠道</span><select><option>全部</option><option>QFII</option></select></label>
+    <label><span>作用起止日</span><input type="date" value="2026-10-10"></label>
+    <label><span>订单方向</span><select><option>全部</option><option>买入</option><option>卖出</option></select></label>
+    <label><span>开平标识</span><select><option>全部</option><option>开仓</option><option>平仓</option></select></label>
+    <label><span>时间区间</span><input placeholder="09:30:00 - 15:00:00"></label>
+    <label><span>备注</span><input id="newRiskNote" placeholder="规则说明"></label>
+    <div class="field-help span-2">页面未提供编辑入口。规则变更时，请先关闭旧规则，再新增并验证新规则。</div>
+  </div><footer><button class="btn ghost" data-close-modal>取消</button><button class="btn primary" id="saveRiskRule">确定</button></footer></section></div>`;
+  if (state.modal.type === "order-confirm") {
+    const direction = state.tradeType === "空头交易" ? (state.direction === "buy" ? "卖开" : "买平") : (state.direction === "buy" ? "买入" : "卖出");
+    return `<div class="modal-mask"><section class="dialog"><header><h3>订单二次确认</h3>${close}</header><div class="dialog-body confirm-grid">
+      <span>交易类型</span><b>${state.tradeType}</b><span>资金/对冲账号</span><b>${state.tradeType==="敞口控制交易"?"HEDGE-DEMO01":"DEMO-1001"}</b>
+      <span>标的代码</span><b>000001.SZ</b><span>订单方向</span><b>${direction}</b>
+      <span>订单类型</span><b>限价单</b><span>订单模式</span><b>${state.orderMode}</b>
+      <span>订单价格</span><b>${state.price.toFixed(2)}</b><span>订单数量</span><b>${state.quantity.toLocaleString()}</b>
+      <span>预估下单金额</span><b>${(state.price*state.quantity).toLocaleString(undefined,{minimumFractionDigits:2})}</b><span>订单控制</span><b>${[state.noApproval?"无需审批":"",state.manualOrder?"手工单":""].filter(Boolean).join("、")||"--"}</b>
+    </div><footer><button class="btn ghost" data-close-modal>返回修改</button><button class="btn primary" id="confirmSubmitOrder">确认发送</button></footer></section></div>`;
+  }
+  if (["direct-order","split-order"].includes(state.modal.type)) {
+    const split = state.modal.type === "split-order";
+    const rows = split ? 2 : 1;
+    return `<div class="modal-mask"><section class="dialog wide-dialog"><header><h3>${split?"拆单":"直接下单"}</h3>${close}</header><div class="dialog-body"><div class="source-order">母单 ${orderRows[state.modal.index][3]} · 待处理数量 ${orderRows[state.modal.index][8]} · 母单模式 ${orderRows[state.modal.index][6]}</div>
+      <table class="data-table edit-table"><thead><tr><th>子单</th><th>订单价格</th><th>订单数量</th><th>订单模式</th><th>算法类型</th><th>手工单</th><th>备注</th></tr></thead><tbody>${Array.from({length:rows},(_,i)=>`<tr><td>${i+1}</td><td><input class="child-price" value="${orderRows[state.modal.index][7]}"></td><td><input class="child-qty" value="${split?i===0?"1200":"800":orderRows[state.modal.index][8].replaceAll(",","")}"></td><td><select class="child-mode"><option>LowTouch</option><option>HighTouch</option></select></td><td><select><option>不使用</option><option>TWAP</option></select></td><td><input class="child-manual" type="checkbox"></td><td><input placeholder="可选"></td></tr>`).join("")}</tbody></table>
+      <div class="field-help">母单与子单模式可以不同；子单数量合计不得超过母单当前可处理数量。</div></div><footer><button class="btn ghost" data-close-modal>取消</button><button class="btn primary" id="saveChildOrders" data-parent-index="${state.modal.index}">提交</button></footer></section></div>`;
+  }
+  if (state.modal.type === "manual-fill") return `<div class="modal-mask"><section class="dialog"><header><h3>成交信息录入</h3>${close}</header><div class="dialog-body form-grid"><label><span>成交价格</span><input id="executionPrice" value="${state.price.toFixed(2)}"></label><label><span>成交数量</span><input id="executionQty" value="1000"></label><label><span>成交时间</span><input id="executionTime" type="datetime-local" value="2026-10-10T10:20"></label><div class="field-help span-2">成交时间不得早于委托时间；同一子单可录入一笔或多笔成交。</div></div><footer><button class="btn ghost" data-close-modal>取消</button><button class="btn primary" id="saveExecution">保存</button></footer></section></div>`;
+  return "";
+}
+
 function bindInteractions() {
   document.querySelectorAll("[data-symbol-index]").forEach(row => row.addEventListener("click", () => { state.selectedSymbol = Number(row.dataset.symbolIndex); render(); }));
+  document.querySelectorAll("[data-trade-type]").forEach(btn => btn.addEventListener("click", () => { state.tradeType = btn.dataset.tradeType; render(); }));
   document.querySelectorAll("[data-direction]").forEach(btn => btn.addEventListener("click", () => { state.direction = btn.dataset.direction; render(); }));
   document.querySelectorAll("[data-book-price]").forEach(row => row.addEventListener("click", () => { state.price = Number(row.dataset.bookPrice); const input = document.querySelector("#priceInput"); if (input) input.value = state.price.toFixed(2); }));
   document.querySelectorAll("[data-step]").forEach(btn => btn.addEventListener("click", () => {
@@ -255,21 +384,42 @@ function bindInteractions() {
     target.value = btn.dataset.step === "price" ? state.price.toFixed(2) : state.quantity;
   }));
   document.querySelectorAll("[data-fraction]").forEach(btn => btn.addEventListener("click", () => { state.quantity = Math.floor(25000 * Number(btn.dataset.fraction) / 100) * 100; const q = document.querySelector("#qtyInput"); if(q) q.value = state.quantity; }));
-  document.querySelectorAll("[data-toggle]").forEach(toggle => toggle.addEventListener("click", () => toggle.classList.toggle("on")));
+  document.querySelectorAll("[data-risk-toggle]").forEach(toggle => toggle.addEventListener("click", () => { const rule=riskRules.find(r=>r.id===Number(toggle.dataset.riskToggle)); rule.enabled=!rule.enabled; render(); notify(rule.enabled?"规则已开启":"规则已关闭"); }));
+  document.querySelectorAll("[data-risk-delete]").forEach(btn => btn.addEventListener("click", () => notify(`规则 ${btn.dataset.riskDelete} 删除操作仅作演示，未实际移除`)));
+  document.querySelectorAll("[data-risk-export]").forEach(btn => btn.addEventListener("click", () => notify(`规则 ${btn.dataset.riskExport} 已生成演示导出`)));
   document.querySelectorAll("[data-risk-tab]").forEach(btn => btn.addEventListener("click", () => {
     if (!["风控设置", "风控消息"].includes(btn.dataset.riskTab)) return notify(`${btn.dataset.riskTab}待补充截图后继续复刻`);
     state.riskTab = btn.dataset.riskTab;
     render();
   }));
   document.querySelectorAll("[data-config-tab]").forEach(btn => btn.addEventListener("click", () => {
-    if (!["购买力账号", "订单模式"].includes(btn.dataset.configTab)) return notify(`${btn.dataset.configTab}待补充截图后继续复刻`);
+    if (!["购买力账号", "订单模式", "柜台账号映射"].includes(btn.dataset.configTab)) return notify(`${btn.dataset.configTab}待补充截图后继续复刻`);
     state.configTab = btn.dataset.configTab;
     render();
   }));
-  document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", () => { orderRows[Number(btn.dataset.approveOrder)][1] = "已确认"; render(); notify("HighTouch 委托已确认并进入下发流程（原型）"); }));
+  document.querySelectorAll("[data-approval-tab]").forEach(btn => btn.addEventListener("click", () => { state.approvalTab=btn.dataset.approvalTab; const first=approvalRows.findIndex(r=>state.approvalTab==="待审批事项"?r[5]==="待审批":r[5]!=="待审批"); if(first>=0) state.selectedApproval=first; render(); }));
+  document.querySelectorAll("[data-approval-row]").forEach(row => row.addEventListener("click", () => { state.selectedApproval=Number(row.dataset.approvalRow); render(); }));
+  document.querySelector("#passApproval")?.addEventListener("click", () => { approvalRows[state.selectedApproval][5]="审批通过"; state.approvalTab="已审批事项"; render(); notify("审批已通过，委托进入后续执行流程"); });
+  document.querySelector("#rejectApproval")?.addEventListener("click", () => { approvalRows[state.selectedApproval][5]="审批拒绝"; state.approvalTab="已审批事项"; render(); notify("审批已拒绝并保留审批记录"); });
+  document.querySelector("#approvalDetail")?.addEventListener("click", () => notify("已展示委托详情、审批节点及审批前后数据（原型）"));
+  document.querySelectorAll("[data-order-row]").forEach(row => row.addEventListener("click", () => { state.selectedOrder=Number(row.dataset.orderRow); render(); }));
+  document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); const index=Number(btn.dataset.approveOrder); orderRows[index][1] = "已确认"; state.selectedOrder=index; render(); notify("订单已确认，可选择直接下单或拆单"); }));
+  document.querySelectorAll("[data-direct-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"direct-order",index:Number(btn.dataset.directOrder)}; render(); }));
+  document.querySelectorAll("[data-split-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"split-order",index:Number(btn.dataset.splitOrder)}; render(); }));
+  document.querySelectorAll("[data-manual-fill]").forEach(btn => btn.addEventListener("click", () => { const [parent,child]=btn.dataset.manualFill.split(":").map(Number); const row=childOrders[parent]?.[child]; if(!row?.manual) return notify("电子子单已发起撤单演示"); state.modal={type:"manual-fill",index:parent,child}; render(); }));
   document.querySelector("#orderModeSelect")?.addEventListener("change", (event) => { state.orderMode = event.target.value; render(); });
-  document.querySelector("#resetOrder")?.addEventListener("click", () => { state.price = 10.80; state.quantity = 0; render(); notify("下单信息已重置"); });
-  document.querySelector("#submitOrder")?.addEventListener("click", () => notify(state.orderMode === "HighTouch" ? `HighTouch 委托已生成，等待交易员确认：${state.quantity || 0} 股 @ ${state.price.toFixed(2)}` : `${state.orderMode} 委托演示已提交：${state.quantity || 0} 股 @ ${state.price.toFixed(2)}`));
+  document.querySelector("#noApproval")?.addEventListener("change", event => { state.noApproval=event.target.checked; });
+  document.querySelector("#manualOrder")?.addEventListener("change", event => { state.manualOrder=event.target.checked; render(); });
+  document.querySelector("#riskCategory")?.addEventListener("change", event => { state.riskCategory=event.target.value; render(); });
+  document.querySelector("#addRiskRule")?.addEventListener("click", () => { state.modal={type:"risk-rule"}; render(); });
+  document.querySelectorAll("[data-mapping-row]").forEach(row => row.addEventListener("dblclick", () => notify("已进入柜台账号映射编辑状态（原型）")));
+  document.querySelectorAll("[data-close-modal]").forEach(btn => btn.addEventListener("click", () => { state.modal=null; render(); }));
+  document.querySelector("#saveRiskRule")?.addEventListener("click", () => { riskRules.unshift({id:Math.max(...riskRules.map(r=>r.id))+1,enabled:false,category:document.querySelector("#newRiskCategory").value,type:document.querySelector("#newRiskType").value,account:document.querySelector("#newRiskAccount").value,note:document.querySelector("#newRiskNote").value,scope:"个人",start:"2026-10-10"}); state.modal=null; state.riskCategory="全部规则"; render(); notify("新规则已保存，默认处于关闭状态"); });
+  document.querySelector("#saveChildOrders")?.addEventListener("click", () => { const index=Number(document.querySelector("#saveChildOrders").dataset.parentIndex); const prices=[...document.querySelectorAll(".child-price")]; const qtys=[...document.querySelectorAll(".child-qty")]; const modes=[...document.querySelectorAll(".child-mode")]; const manuals=[...document.querySelectorAll(".child-manual")]; childOrders[index]=prices.map((p,i)=>({manual:manuals[i].checked,values:[`SUB-${index+1}${i+1}`,orderRows[index][5],modes[i].value,p.value,Number(qtys[i].value).toLocaleString(),manuals[i].checked?"待补录":"已报"]})); state.modal=null; state.selectedOrder=index; render(); notify(`${childOrders[index].length} 笔子单已生成并联动展示`); });
+  document.querySelector("#saveExecution")?.addEventListener("click", () => { const index=state.modal.index; tradeExecutions[index] ||= []; tradeExecutions[index].push([orderRows[index][5],`EXEC-${index+1}${tradeExecutions[index].length+1}`,document.querySelector("#executionPrice").value,Number(document.querySelector("#executionQty").value).toLocaleString(),"手工成交"]); state.modal=null; render(); notify("手工成交已保存并汇总至母单（原型）"); });
+  document.querySelector("#resetOrder")?.addEventListener("click", () => { state.price = 10.80; state.quantity = 0; state.noApproval=false; state.manualOrder=false; render(); notify("下单信息已重置"); });
+  document.querySelector("#submitOrder")?.addEventListener("click", () => { state.modal={type:"order-confirm"}; render(); });
+  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString()]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
 }
 
 let toastTimer;

@@ -185,8 +185,10 @@ button { cursor: pointer; }
 .trade-tabs button.active { background: #aeb4bb; }
 .mini-tabs { display: flex; gap: 4px; margin-bottom: 9px; }
 .mini-tabs button { padding: 0 12px; }
+.mini-tabs button.active { color: var(--blue); background: #eaf2ff; }
 .form-row { min-height: 32px; display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; }
 .form-label { color: #6f7780; }
+.form-label.required::before { content: "*"; color: #ef4935; margin-right: 2px; }
 .form-control { height: 28px; border: 1px solid #c9cfd5; background: #fff; border-radius: 3px; padding: 0 8px; min-width: 0; width: 100%; }
 .direction-toggle { display: grid; grid-template-columns: 1fr 1fr; height: 29px; }
 .direction-toggle button { border: 0; background: #eff1f4; color: var(--teal); }
@@ -198,6 +200,10 @@ button { cursor: pointer; }
 .qty-hint { font-size: 11px; text-align: right; margin: -4px 2px 4px 0; }
 .qty-hint b { color: #00aacc; }
 .mode-hint { margin: -2px 2px 3px 72px; min-height: 17px; color: #7b848d; font-size: 11px; text-align: right; }
+.check-row { min-height: 28px; display: flex; align-items: center; gap: 6px; margin-left: 72px; font-size: 12px; }
+.check-row input { accent-color: var(--blue); }
+.check-row span { color: #8a9299; font-size: 11px; }
+.inline-time { width: 88px; height: 24px; border: 1px solid #c9cfd5; border-radius: 3px; }
 .fractions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-left: 72px; }
 .fractions button { height: 26px; color: #fff; border: 0; background: #3f82ed; border-radius: 2px; }
 .order-actions { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
@@ -214,6 +220,11 @@ button { cursor: pointer; }
 .empty-table-panel { display: flex; flex-direction: column; }
 .panel-title { height: 31px; padding: 7px 10px; border-bottom: 1px solid var(--line-dark); font-size: 13px; }
 .empty-table-panel .table-wrap { flex: 1; }
+.empty-hint { height: 90px; display: grid; place-items: center; color: #9aa2aa; }
+.panel-note { float: right; color: #899199; font-size: 11px; }
+.compact-action { padding: 0 6px; margin: 0 2px; font-size: 11px; }
+.ghost-action { color: var(--blue); background: #fff; border: 1px solid var(--blue); }
+.link-button { border: 0; background: transparent; color: var(--blue); padding: 0; }
 
 .cards { flex: none; display: grid; grid-template-columns: repeat(6, 1fr); gap: 11px; padding: 13px 12px 11px; }
 .stat-card { min-width: 0; height: 90px; border: 1px solid #d4d9df; border-radius: 14px; padding: 10px 14px; background: #fbfcfd; }
@@ -234,7 +245,7 @@ button { cursor: pointer; }
 .progress-cell { padding: 0 !important; }
 .progress-bar { margin: 0 4px; height: 18px; background: #c5c7c9; position: relative; text-align: center; line-height: 18px; }
 
-.data-view, .risk-view, .config-view { display: flex; flex-direction: column; }
+.data-view, .risk-view, .config-view, .approval-view { display: flex; flex-direction: column; }
 .data-content { flex: 1; min-height: 0; display: grid; grid-template-columns: 205px 1fr; padding: 0 6px; }
 .tree-panel { min-width: 0; display: flex; flex-direction: column; }
 .tree-tabs { height: 37px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
@@ -255,6 +266,32 @@ button { cursor: pointer; }
 .date-orange { color: #ff8419; }
 .risk-reject { color: #ef3f35; font-weight: 700; }
 .risk-warning { color: #ed8a15; font-weight: 700; }
+.toolbar-note { color: #8a929a; font-size: 11px; }
+.icon-button { border: 0; background: transparent; color: #78828b; padding: 2px 4px; font-size: 16px; }
+.config-footnote { flex: none; min-height: 34px; padding: 9px 12px; color: #6f7881; border-top: 1px solid #e2e5e8; background: #fafbfc; }
+.approval-list { flex: 1.15; min-height: 0; display: flex; flex-direction: column; border-bottom: 7px solid var(--bg); }
+.approval-detail { flex: .85; min-height: 0; display: flex; flex-direction: column; }
+.approval-list .table-wrap, .approval-detail .table-wrap { flex: 1; }
+
+.modal-mask { position: fixed; z-index: 40; inset: var(--titlebar-height) 0 0 var(--sidebar-width); display: grid; place-items: center; background: rgba(20,31,42,.28); }
+.dialog { width: min(620px, calc(100vw - 130px)); max-height: calc(100vh - 100px); display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 6px; box-shadow: 0 16px 48px rgba(0,0,0,.28); }
+.wide-dialog { width: min(900px, calc(100vw - 130px)); }
+.dialog header { height: 46px; flex: none; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #d8dde2; }
+.dialog h3 { margin: 0; font-size: 16px; }
+.modal-close { margin-left: auto; border: 0; background: transparent; color: #69737c; font-size: 24px; }
+.dialog-body { padding: 18px; overflow: auto; }
+.dialog footer { height: 55px; flex: none; display: flex; justify-content: flex-end; align-items: center; gap: 9px; padding: 0 16px; border-top: 1px solid #e1e4e7; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.form-grid label { display: grid; grid-template-columns: 118px 1fr; align-items: center; gap: 7px; color: #606a73; }
+.form-grid input, .form-grid select { min-width: 0; width: 100%; height: 30px; border: 1px solid #c8cfd6; border-radius: 3px; padding: 0 8px; background: #fff; }
+.field-help { margin-top: 10px; padding: 9px 11px; color: #67717a; background: #f4f7fa; border-left: 3px solid var(--blue); }
+.span-2 { grid-column: 1 / -1; }
+.confirm-grid { display: grid; grid-template-columns: 120px 1fr 120px 1fr; gap: 14px 12px; }
+.confirm-grid span { color: #7a838c; }
+.confirm-grid b { font-weight: 500; }
+.source-order { margin-bottom: 12px; color: #4f5962; }
+.edit-table input, .edit-table select { width: 100%; height: 27px; border: 1px solid #c8cfd6; background: #fff; }
+.edit-table input[type="checkbox"] { width: auto; }
 
 .toast { position: fixed; left: calc(50% + 36px); bottom: 25px; transform: translate(-50%, 15px); opacity: 0; pointer-events: none; background: #18222c; color: #fff; padding: 10px 18px; border-radius: 5px; box-shadow: 0 4px 16px rgba(0,0,0,.25); transition: .2s; z-index: 20; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
