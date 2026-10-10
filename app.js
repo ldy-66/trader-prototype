@@ -71,6 +71,9 @@ let state = {
   modal: null,
   approvalTab: "待审批事项",
   selectedApproval: 0,
+  dataTab: "资金管理",
+  dataParty: "对客方",
+  dataRange: "今天",
   riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
@@ -254,16 +257,83 @@ function lendPoolTable() {
   return `<div class="table-wrap"><table class="data-table"><thead><tr><th></th><th>券池编号</th><th>标的代码</th><th>标的名称</th><th>撮合成交数量</th><th>撮合成交金额</th><th>已分配数量</th><th>分配比例</th><th>未分配数量</th><th>未分配敞口金额</th></tr></thead><tbody>${rows.map(r => `<tr><td class="center">□</td>${r.slice(0,6).map(v => `<td>${v}</td>`).join("")}<td class="progress-cell"><div class="progress-bar">0.00%</div></td>${r.slice(6).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
+const dataTabs = ["资金管理", "持仓信息", "汇率管理", "保证金比例", "成交查询", "对冲持仓", "交易日", "操作日志", "历史成交", "订单查询", "券池持仓", "额度明细", "融券申请查询"];
+const implementedDataTabs = ["资金管理", "持仓信息", "汇率管理", "保证金比例", "成交查询", "对冲持仓", "交易日", "订单查询"];
+
 function dataView() {
-  const nodes = ["机构 166", "机构 167", "交易对手 1204", "客户组 0923", "资金账号组 DEMO-01", "策略组合 1208", "客户 YAO YUQIAN", "召回专用", "客户组 0919", "ddan", "yyq", "dan", "招商证券", "19990427", "20260112", "2026机构", "HTS", "ABOUT CAPITAL ASIAN", "test_cj", "gc-cmsim", "DEMO-ACCOUNT"];
-  const rows = [["002223", "鱼跃医疗", "已上市", "DEMO-30399", "DEMO-30399", "35.870000", "120,000", "0"], ["002311", "海大集团", "已上市", "DEMO-30399", "DEMO-30399", "48.992300", "30,000", "0"], ["002582", "好想你", "已上市", "DEMO-30399", "DEMO-30399", "6.003500", "300,000", "0"], ["002714", "牧原股份", "已上市", "DEMO-30399", "DEMO-30399", "48.895500", "150,000", "0"], ["300274", "阳光电源", "已上市", "DEMO-30399", "DEMO-30399", "75.667700", "4,000", "0"], ["300783", "三只松鼠", "已上市", "DEMO-30399", "DEMO-30399", "24.538041", "199,100", "0"], ["600066", "宇通客车", "已上市", "DEMO-30399", "DEMO-30399", "23.647067", "300,000", "0"], ["601857", "中国石油", "已上市", "DEMO-30399", "DEMO-30399", "7.064100", "300,000", "0"]];
+  const pages = {
+    "资金管理": fundManagementPage,
+    "持仓信息": positionDetailPage,
+    "汇率管理": exchangeRatePage,
+    "保证金比例": marginRatePage,
+    "成交查询": executionQueryPage,
+    "对冲持仓": hedgePositionPage,
+    "交易日": tradingDayPage,
+    "订单查询": historyOrderPage,
+  };
   return `<section class="view panel data-view">
-    <div class="top-tabs">${["资金管理", "持仓信息", "汇率管理", "保证金比例", "成交查询", "对冲持仓", "交易日", "操作日志", "历史成交", "订单查询", "券池持仓", "额度明细", "融券申请查询"].map((x,i)=>`<button class="top-tab ${i===0?"active":""}">${x}</button>`).join("")}</div>
-    <div class="toolbar compact"><span>交易节点</span><select class="select-field"><option>全部</option></select><select class="select-field" style="min-width:200px"><option>框架名称</option></select><select class="select-field" style="min-width:200px"><option>标的代码</option></select><button class="btn primary">查询</button><button class="btn primary">导出持仓</button><span>币种显示为:</span><select class="select-field"><option></option></select></div>
-    <div class="data-content"><aside class="tree-panel"><div class="tree-tabs"><button class="active">对客方</button><button>对冲方</button></div><span class="search-wrap"><input class="field" style="width:100%" placeholder="机构号/客户账号/资金账号查询"></span><div class="tree-list">${nodes.map(n=>`<div class="tree-node">${n}</div>`).join("")}</div></aside>
-      <div class="holdings"><div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>序列</th><th>标的代码</th><th>标的名称</th><th>标的状态</th><th>资金账号</th><th>资金账号名称</th><th>持仓均价</th><th>期初数量</th><th>日间开仓数量</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?"selected":""}"><td>${i+1}</td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
-    </div>
+    <div class="top-tabs data-tabs">${dataTabs.map(x=>`<button class="top-tab ${x===state.dataTab?"active":""}" data-data-tab="${x}">${x}</button>`).join("")}</div>
+    ${pages[state.dataTab]()}
   </section>`;
+}
+
+function fundManagementPage() {
+  const nodes = ["机构 DEMO-01", "客户组 A", "客户 DEMO-C01", "客户 DEMO-C02", "资金账号组 CNY", "资金账号组 HKD", "客户 DEMO-C03", "召回专用", "测试组合组"];
+  const fundRows = [["DEMO-C01", "DEMO-TR01", "DEMO-1001", "演示资金账号01", "CNY", "1.000000", "8,500,000.00", "6,328,640.00", "1,250,000.00", "480,000.00", "42,600.00", "-12,400.00"], ["DEMO-C02", "DEMO-TR02", "DEMO-1002", "演示资金账号02", "HKD", "0.923500", "4,200,000.00", "3,816,000.00", "320,000.00", "64,000.00", "18,200.00", "3,600.00"]];
+  const positionRows = [["000001.SZ", "平安银行", "DEMO-1001", "普通交易", "10.62", "120,000", "10,000", "5,000", "8,000", "117,000"], ["600000.SH", "浦发银行", "DEMO-1001", "普通交易", "9.38", "80,000", "0", "2,000", "3,000", "75,000"]];
+  return `<div class="toolbar compact"><span>交易节点</span><select class="select-field"><option>全部</option></select><select class="select-field"><option>框架名称</option></select><select class="select-field"><option>标的代码</option></select><button class="btn primary" data-data-query>查询</button><button class="btn primary" data-data-export>导出持仓</button><span class="toolbar-spacer"></span><span>币种显示为</span><select class="select-field short-select"><option>CNY</option><option>HKD</option><option>USD</option></select></div>
+    <div class="data-content"><aside class="tree-panel"><div class="tree-tabs">${["对客方","对冲方"].map(x=>`<button data-data-party="${x}" class="${state.dataParty===x?"active":""}">${x}</button>`).join("")}</div><span class="search-wrap"><input class="field" style="width:100%" placeholder="机构号/客户账号/资金账号查询"></span><div class="tree-list">${nodes.map((n,i)=>`<div class="tree-node ${i===2?"selected-node":""}">${n}</div>`).join("")}</div></aside>
+      <div class="fund-workspace"><div class="table-wrap fund-table"><table class="data-table"><thead><tr><th>客户号</th><th>交易账户</th><th>资金账号</th><th>资金账号名称</th><th>币种</th><th>汇率</th><th>期初金额</th><th>可用金额</th><th>保证金占用</th><th>保证金冻结</th><th>平仓盈亏</th><th>浮动盈亏</th></tr></thead><tbody>${fundRows.map((r,i)=>`<tr class="${i===0?"selected":""}">${r.map((v,j)=>`<td>${j===0?"⊞ ":""}${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      <div class="table-wrap position-summary"><div class="subsection-title">持仓汇总</div><table class="data-table"><thead><tr><th>标的代码</th><th>标的名称</th><th>资金账号</th><th>业务类型</th><th>持仓均价</th><th>期初数量</th><th>日间开仓数量</th><th>日间平仓数量</th><th>交易冻结数量</th><th>可用持仓数量</th></tr></thead><tbody>${positionRows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>
+    </div>`;
+}
+
+function positionDetailPage() {
+  const rows = [["演示客户01", "DEMO-1001", "DEMO-TR01", "000001.SZ", "平安银行", "深交所", "CNY", "CNY", "120,000", "117,000", "10.80", "10.41", "10.62", "1,296,000.00", "46,800.00", "3.75%", "多头"], ["演示客户02", "DEMO-1002", "DEMO-TR02", "600000.SH", "浦发银行", "上交所", "CNY", "CNY", "80,000", "75,000", "9.52", "9.26", "9.38", "761,600.00", "20,800.00", "2.81%", "多头"]];
+  return `${filterToolbar(["客户名", "资金账户", "交易账户", "标的代码", "交易市场"], true)}${tablePage(["客户名","资金账户号","交易账户","标的代码","标的名称","交易市场","账户币种","股票币种","持仓数量","可用数量","最新价","成本价","持仓均价","市值","持仓盈亏","持仓盈亏率","持仓类型"], rows)}`;
+}
+
+function exchangeRatePage() {
+  const rows = [["USD", "CNY", "7.118600", "中间价", "BCT市场数据"], ["HKD", "CNY", "0.915400", "中间价", "BCT市场数据"], ["CNY", "CNY", "1.000000", "中间价", "BCT市场数据"], ["SGD", "CNY", "5.482100", "中间价", "BCT市场数据"]];
+  return `<div class="toolbar compact"><input class="field" placeholder="交易货币"><input class="field" placeholder="结算货币"><button class="btn primary" data-data-query>查询</button></div>${tablePage(["交易货币","结算货币","参考汇率","汇率类型","汇率源"], rows)}`;
+}
+
+function marginRatePage() {
+  const rows = [["交易对手", "演示客户01", "--", "--", "20.00%"], ["交易对手+标的代码+方向", "演示客户01", "000001.SZ", "平安银行", "25.00%"], ["交易对手+标的代码+方向", "演示客户02", "600000.SH", "浦发银行", "30.00%"]];
+  return `<div class="toolbar compact"><input class="field" placeholder="交易对手"><input class="field" placeholder="标的代码"><button class="btn primary" data-data-query>查询</button></div>${tablePage(["配置类型","交易对手","标的代码","标的名称","初始保证金比例"], rows)}`;
+}
+
+function executionQueryPage() {
+  const rows = [["2026-10-10", "EXEC-DEMO-001", "DEMO-1001", "演示资金账号01", "DEMO-FRAME", "000001.SZ", "平安银行", "买入", "开仓", "10.78", "2,000", "21,560.00", "深交所", "10:18:32", "QFII-DEMO"], ["2026-10-09", "EXEC-DEMO-002", "DEMO-1002", "演示资金账号02", "DEMO-FRAME", "600000.SH", "浦发银行", "卖出", "平仓", "9.52", "5,000", "47,600.00", "上交所", "14:31:08", "CHANNEL-B"]];
+  return `${historyToolbar(["资金账号", "标的代码", "委托方向", "交易所", "对冲渠道"])}<div class="dimension-bar"><span>查询维度</span>${["成交单笔","证券代码+委托方向","证券代码+委托方向+日期","自定义维度"].map((x,i)=>`<button class="dimension-btn ${i===0?"active":""}">${x}</button>`).join("")}</div>${tablePage(["日期","成交编号","资金账号","资金账号名称","框架名称","证券代码","证券名称","委托方向","开平标识","成交价格","成交数量","成交金额","交易所","成交时间","对冲渠道"], rows, "合计　成交数量 7,000　成交金额 69,160.00")}`;
+}
+
+function hedgePositionPage() {
+  const cards = [["可用资金","8,126,400.00"],["冻结资金","480,000.00"],["期初资金","8,500,000.00"],["持仓市值","2,057,600.00"]];
+  const rows = [["QFII-DEMO", "HEDGE-DEMO01", "000001.SZ", "平安银行", "已上市", "多头", "8,000", "120,000", "10,000", "5,000", "10.62", "117,000", "125,000", "1,350,000.00"], ["CHANNEL-B", "HEDGE-DEMO02", "600000.SH", "浦发银行", "已上市", "多头", "3,000", "80,000", "0", "2,000", "9.38", "75,000", "77,000", "733,040.00"]];
+  return `<div class="toolbar compact"><input class="field" placeholder="对冲账号"><input class="field" placeholder="标的代码"><button class="btn primary" data-data-query>查询</button><button class="btn ghost" data-data-export>导出</button></div><div class="summary-cards">${cards.map(c=>`<div><span>${c[0]}</span><b>${c[1]}</b></div>`).join("")}</div>${tablePage(["对冲渠道","对冲账号","标的代码","标的名称","标的状态","持仓类型","冻结数量","期初数量","日内开仓成交数量","日内平仓成交数量","持仓均价","可用数量","持仓数量","持仓市值"], rows)}`;
+}
+
+function tradingDayPage() {
+  const rows = [["CN-EQUITY", "沪深", "2026-10-10", "CN_STOCK"], ["HK-EQUITY", "港股", "2026-10-10", "HKEX"], ["US-EQUITY", "美股", "2026-10-09", "NYSE_NASDAQ"], ["CN-FUTURE", "期货", "2026-10-10", "CN_FUTURE"]];
+  return `<div class="toolbar compact"><input class="field" placeholder="业务单元"><select class="select-field"><option>全部市场</option><option>沪深</option><option>港股</option><option>美股</option></select><button class="btn primary" data-data-query>查询</button></div>${tablePage(["业务单元","市场","当前交易日","交易日历"], rows)}`;
+}
+
+function historyOrderPage() {
+  const rows = [["2026-10-10", "ORD-DEMO-001", "DEMO-TR01", "演示客户01", "DEMO-1001", "HighTouch", "000001.SZ", "平安银行", "买入", "10.80", "2,000", "限价单", "10.78", "2,000", "21,560.00", "已成", "QFII-DEMO"], ["2026-10-09", "ORD-DEMO-002", "DEMO-TR02", "演示客户02", "DEMO-1002", "LowTouch", "600000.SH", "浦发银行", "卖出", "9.52", "5,000", "限价单", "9.52", "5,000", "47,600.00", "已成", "CHANNEL-B"]];
+  return `${historyToolbar(["标的代码", "交易账户", "业务标识", "订单状态"])}<div class="dimension-bar"><span>汇总维度</span>${["委托单笔","标的代码+订单方向","标的代码+订单方向+日期","标的代码+订单方向+业务类型"].map((x,i)=>`<button class="dimension-btn ${i===0?"active":""}">${x}</button>`).join("")}</div>${tablePage(["日期","委托编号","交易账户","客户名","资金账户号","订单模式","标的代码","标的名称","订单方向","委托价格","委托数量","订单类型","成交均价","成交数量","成交金额","订单状态","对冲渠道"], rows, "合计　成交数量 7,000　成交金额 69,160.00")}`;
+}
+
+function filterToolbar(labels, exportable=false) {
+  return `<div class="toolbar compact data-filter">${labels.map(x=>`<input class="field" placeholder="${x}">`).join("")}<button class="btn primary" data-data-query>查询</button>${exportable?`<button class="btn ghost" data-data-export>导出</button>`:""}</div>`;
+}
+
+function historyToolbar(labels) {
+  return `<div class="history-tools"><div class="range-buttons">${["今天","昨天","最近7天","最近1个月","最近3个月"].map(x=>`<button class="${x===state.dataRange?"active":""}" data-date-range="${x}">${x}</button>`).join("")}<input type="date" value="2026-10-10"><span>至</span><input type="date" value="2026-10-10"></div>${filterToolbar(labels, true)}</div>`;
+}
+
+function tablePage(columns, rows, summary="") {
+  return `<div class="table-wrap standalone-data-table"><table class="data-table"><thead><tr><th style="width:46px">序号</th>${columns.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.map((r,i)=>`<tr class="${i===0?"selected":""}"><td>${i+1}</td>${r.map(v=>`<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>${summary?`<div class="data-summary">${summary}</div>`:""}`;
 }
 
 function riskView() {
@@ -373,6 +443,11 @@ function modalView() {
 
 function bindInteractions() {
   document.querySelectorAll("[data-symbol-index]").forEach(row => row.addEventListener("click", () => { state.selectedSymbol = Number(row.dataset.symbolIndex); render(); }));
+  document.querySelectorAll("[data-data-tab]").forEach(btn => btn.addEventListener("click", () => { if(!implementedDataTabs.includes(btn.dataset.dataTab)) return notify(`${btn.dataset.dataTab}在当前知识库中缺少完整 PC 页面资料`); state.dataTab=btn.dataset.dataTab; render(); }));
+  document.querySelectorAll("[data-data-party]").forEach(btn => btn.addEventListener("click", () => { state.dataParty=btn.dataset.dataParty; render(); }));
+  document.querySelectorAll("[data-date-range]").forEach(btn => btn.addEventListener("click", () => { state.dataRange=btn.dataset.dateRange; render(); }));
+  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}查询条件已应用（原型）`)));
+  document.querySelectorAll("[data-data-export]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}当前结果已生成演示导出`)));
   document.querySelectorAll("[data-trade-type]").forEach(btn => btn.addEventListener("click", () => { state.tradeType = btn.dataset.tradeType; render(); }));
   document.querySelectorAll("[data-direction]").forEach(btn => btn.addEventListener("click", () => { state.direction = btn.dataset.direction; render(); }));
   document.querySelectorAll("[data-book-price]").forEach(row => row.addEventListener("click", () => { state.price = Number(row.dataset.bookPrice); const input = document.querySelector("#priceInput"); if (input) input.value = state.price.toFixed(2); }));
