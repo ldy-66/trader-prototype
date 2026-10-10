@@ -57,6 +57,14 @@ const approvalRows = [
   ["AP-20261010-002", "ORD-DEMO-02", "2026-10-10", "10:21:06", "委托（Slice）", "待审批", "是", "600000.SH", "限价单", "5,000", "9.52", "卖出"],
 ];
 
+const notificationRows = [
+  { id: 1, category: "交易", level: "success", icon: "✓", status: "已提交", title: "订单提交成功", summary: "000001.SZ 买入委托已提交，等待后续处理。", body: "您的买入委托已成功提交。消息已进入消息中心，关闭通知窗口不会影响订单处理。", time: "10:21", unread: true, order: "ORD-DEMO-01", account: "DEMO-1001" },
+  { id: 2, category: "风险", level: "danger", icon: "!", status: "已拒绝", title: "订单未通过风控校验", summary: "委托价格偏离触发风控规则，订单未提交。", body: "该笔委托未通过当前账户适用的风控规则，订单未进入报单流程。请调整委托信息后重新提交。", time: "10:18", unread: true, order: "ORD-DEMO-03", account: "DEMO-1001" },
+  { id: 3, category: "交易", level: "success", icon: "✓", status: "已成交", title: "订单已全部成交", summary: "600000.SH 卖出 5,000 股，成交均价 9.52。", body: "该笔卖出委托已全部成交，成交结果已同步至订单和成交查询。", time: "09:52", unread: true, order: "ORD-DEMO-02", account: "DEMO-1002" },
+  { id: 4, category: "风险", level: "warning", icon: "!", status: "提醒", title: "账户可用购买力较低", summary: "当前可用购买力接近预警阈值，请关注账户资金。", body: "当前账户可用购买力已接近预警阈值。本消息仅用于提醒，不直接改变订单或账户状态。", time: "09:36", unread: false, order: "--", account: "DEMO-1001" },
+  { id: 5, category: "系统", level: "info", icon: "i", status: "安全", title: "新设备登录提醒", summary: "账号于 09:12 在新设备登录。", body: "检测到当前账号在新设备登录。如非本人操作，请及时联系系统管理员。", time: "09:12", unread: false, order: "--", account: "Trader Demo" },
+];
+
 let state = {
   view: "market",
   direction: "buy",
@@ -77,11 +85,17 @@ let state = {
   riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
+  notificationOpen: false,
+  notificationFilter: "全部",
+  selectedNotification: 1,
 };
 
 const mainNav = document.querySelector("#mainNav");
 const workspace = document.querySelector("#workspace");
 const toast = document.querySelector("#toast");
+const notificationBell = document.querySelector("#notificationBell");
+const notificationBadge = document.querySelector("#notificationBadge");
+const notificationLayer = document.querySelector("#notificationLayer");
 
 mainNav.innerHTML = navItems.map(([id, label, icon]) => `
   <button class="nav-item" data-view="${id}" type="button" title="${label}">
@@ -90,6 +104,27 @@ mainNav.innerHTML = navItems.map(([id, label, icon]) => `
 
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", () => navigate(item.dataset.view));
+});
+
+notificationBell.addEventListener("click", (event) => {
+  event.stopPropagation();
+  state.notificationOpen = !state.notificationOpen;
+  renderNotificationCenter();
+});
+
+notificationLayer.addEventListener("click", event => event.stopPropagation());
+
+document.addEventListener("click", (event) => {
+  if (!state.notificationOpen || event.target.closest(".notification-center")) return;
+  state.notificationOpen = false;
+  renderNotificationCenter();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !state.notificationOpen) return;
+  state.notificationOpen = false;
+  renderNotificationCenter();
+  notificationBell.focus();
 });
 
 function navigate(view) {
@@ -106,6 +141,68 @@ function render() {
   const views = { market: marketView, orders: ordersView, lending: lendingView, data: dataView, risk: riskView, config: configView, approval: approvalView };
   workspace.innerHTML = views[state.view]() + modalView();
   bindInteractions();
+  renderNotificationCenter();
+}
+
+function renderNotificationCenter() {
+  const unreadCount = notificationRows.filter(item => item.unread).length;
+  notificationBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+  notificationBadge.classList.toggle("show", unreadCount > 0);
+  notificationBell.classList.toggle("active", state.notificationOpen);
+  notificationBell.setAttribute("aria-expanded", String(state.notificationOpen));
+  if (!state.notificationOpen) {
+    notificationLayer.innerHTML = "";
+    return;
+  }
+
+  const filters = ["全部", "交易", "风险", "系统"];
+  const visible = state.notificationFilter === "全部"
+    ? notificationRows
+    : notificationRows.filter(item => item.category === state.notificationFilter);
+  const selected = state.selectedNotification == null
+    ? null
+    : notificationRows.find(item => item.id === state.selectedNotification) || visible[0];
+  const categoryCount = category => category === "全部"
+    ? notificationRows.length
+    : notificationRows.filter(item => item.category === category).length;
+
+  notificationLayer.innerHTML = `<section class="notification-popover" role="dialog" aria-label="消息通知">
+    <header class="notification-head"><h2>消息通知 <span class="notification-total">${unreadCount} 条未读</span></h2><button id="markNotificationsRead" type="button">全部已读</button></header>
+    <div class="notification-filters">${filters.map(filter => `<button class="notification-filter ${filter === state.notificationFilter ? "active" : ""}" data-notification-filter="${filter}" type="button">${filter} ${categoryCount(filter)}</button>`).join("")}</div>
+    <div class="notification-list">${visible.length ? visible.map(item => `<button class="notification-item ${item.unread ? "unread" : ""} ${selected?.id === item.id ? "selected" : ""}" data-notification-id="${item.id}" type="button">
+      <span class="notification-icon ${item.level}">${item.icon}</span>
+      <span class="notification-copy"><span class="notification-title-row"><span class="notification-title">${item.title}</span><span class="notification-status">${item.status}</span></span><span class="notification-summary">${item.summary}</span></span>
+      <span class="notification-time">${item.time}</span>
+    </button>`).join("") : `<div class="notification-empty">当前分类暂无消息</div>`}</div>
+    ${selected ? `<footer class="notification-detail"><div class="notification-detail-head"><b>${selected.title}</b><span>今天 ${selected.time}</span></div><p>${selected.body}</p><div class="notification-meta"><span>资金账号</span><span>${selected.account}</span><span>相关订单</span><span>${selected.order}</span></div><div class="notification-detail-actions"><button class="btn ghost" id="closeNotificationDetail" type="button">收起</button>${selected.order !== "--" ? `<button class="btn primary" id="openRelatedOrder" type="button">查看相关订单</button>` : ""}</div></footer>` : ""}
+  </section>`;
+
+  notificationLayer.querySelectorAll("[data-notification-filter]").forEach(button => button.addEventListener("click", () => {
+    state.notificationFilter = button.dataset.notificationFilter;
+    const nextVisible = state.notificationFilter === "全部" ? notificationRows : notificationRows.filter(item => item.category === state.notificationFilter);
+    if (!nextVisible.some(item => item.id === state.selectedNotification)) state.selectedNotification = nextVisible[0]?.id || null;
+    renderNotificationCenter();
+  }));
+  notificationLayer.querySelectorAll("[data-notification-id]").forEach(button => button.addEventListener("click", () => {
+    const message = notificationRows.find(item => item.id === Number(button.dataset.notificationId));
+    if (!message) return;
+    message.unread = false;
+    state.selectedNotification = message.id;
+    renderNotificationCenter();
+  }));
+  notificationLayer.querySelector("#markNotificationsRead")?.addEventListener("click", () => {
+    notificationRows.forEach(item => { item.unread = false; });
+    renderNotificationCenter();
+  });
+  notificationLayer.querySelector("#closeNotificationDetail")?.addEventListener("click", () => {
+    state.selectedNotification = null;
+    renderNotificationCenter();
+  });
+  notificationLayer.querySelector("#openRelatedOrder")?.addEventListener("click", () => {
+    state.notificationOpen = false;
+    navigate("orders");
+    notify("已定位至相关订单列表（原型）");
+  });
 }
 
 function marketView() {

@@ -60,8 +60,73 @@ button { cursor: pointer; }
 .user-chip { margin-left: 12px; display: flex; align-items: center; gap: 6px; }
 .user-dot { width: 11px; height: 11px; border: 1px solid #68717a; border-radius: 50%; position: relative; }
 .user-dot::after { content: ""; position: absolute; left: -3px; top: 9px; width: 15px; height: 6px; border: 1px solid #68717a; border-bottom: 0; border-radius: 8px 8px 0 0; }
-.window-tools { margin-left: auto; height: 100%; display: flex; align-items: center; gap: 12px; color: #6f7880; font-size: 14px; }
+.window-tools { height: 100%; display: flex; align-items: center; gap: 12px; color: #6f7880; font-size: 14px; }
 .window-tools b { width: 1px; height: 18px; background: #bfc5ca; margin: 0 2px; }
+
+.notification-center { position: relative; margin-left: auto; margin-right: 9px; height: 100%; display: flex; align-items: center; z-index: 60; }
+.notification-bell {
+  position: relative; width: 30px; height: 30px; display: grid; place-items: center;
+  padding: 0; border: 0; border-radius: 5px; color: #56616b; background: transparent;
+}
+.notification-bell:hover, .notification-bell.active { color: var(--blue); background: #e9f2ff; }
+.notification-bell svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.notification-badge {
+  position: absolute; top: 1px; right: 0; min-width: 16px; height: 16px; padding: 0 4px;
+  display: none; align-items: center; justify-content: center;
+  border: 2px solid #f7f8fa; border-radius: 9px; color: #fff; background: #ef4452;
+  font-size: 9px; font-weight: 700; line-height: 12px;
+}
+.notification-badge.show { display: flex; }
+.notification-popover {
+  position: absolute; top: calc(100% + 5px); right: -2px; width: 408px; height: min(590px, calc(100vh - 56px));
+  display: flex; flex-direction: column; overflow: hidden; user-select: text;
+  color: #20262d; background: #fff; border: 1px solid #d5dbe2; border-radius: 8px;
+  box-shadow: 0 14px 38px rgba(18, 35, 52, .22), 0 2px 7px rgba(18, 35, 52, .1);
+}
+.notification-popover::before {
+  content: ""; position: absolute; top: -6px; right: 10px; width: 11px; height: 11px;
+  background: #fff; border-top: 1px solid #d5dbe2; border-left: 1px solid #d5dbe2; transform: rotate(45deg);
+}
+.notification-head { position: relative; height: 54px; flex: none; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #edf0f3; }
+.notification-head h2 { margin: 0; font-size: 16px; }
+.notification-head .notification-total { margin-left: 7px; color: #7c8791; font-size: 12px; font-weight: 400; }
+.notification-head button { margin-left: auto; padding: 5px 0; border: 0; color: var(--blue); background: transparent; font-size: 12px; }
+.notification-filters { height: 42px; flex: none; display: flex; align-items: end; gap: 4px; padding: 0 12px; border-bottom: 1px solid #edf0f3; }
+.notification-filter { position: relative; height: 41px; min-width: 58px; padding: 0 10px; border: 0; color: #59636d; background: transparent; }
+.notification-filter:hover { color: var(--blue); }
+.notification-filter.active { color: var(--blue); font-weight: 600; }
+.notification-filter.active::after { content: ""; position: absolute; left: 9px; right: 9px; bottom: -1px; height: 2px; background: var(--blue); }
+.notification-list { flex: 1; min-height: 0; overflow: auto; background: #fbfcfd; }
+.notification-item {
+  position: relative; width: 100%; min-height: 83px; display: grid; grid-template-columns: 36px 1fr auto;
+  column-gap: 9px; padding: 12px 14px; border: 0; border-bottom: 1px solid #edf0f3;
+  color: inherit; text-align: left; background: #fff;
+}
+.notification-item:hover { background: #f5f9ff; }
+.notification-item.selected { background: #edf5ff; }
+.notification-item.unread::after { content: ""; position: absolute; top: 16px; right: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.notification-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; font-size: 15px; font-weight: 700; }
+.notification-icon.success { color: #16875b; background: #e3f5ed; }
+.notification-icon.danger { color: #d73d4d; background: #fee9ec; }
+.notification-icon.warning { color: #b46b08; background: #fff1d7; }
+.notification-icon.info { color: #2e71c9; background: #e7f1ff; }
+.notification-copy { min-width: 0; }
+.notification-title-row { display: flex; align-items: center; gap: 7px; padding-right: 6px; }
+.notification-title { overflow: hidden; color: #20262d; font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.notification-status { flex: none; padding: 1px 5px; border-radius: 3px; color: #59636c; background: #eef1f4; font-size: 10px; }
+.notification-summary { margin-top: 5px; overflow: hidden; color: #68737d; font-size: 12px; line-height: 18px; white-space: nowrap; text-overflow: ellipsis; }
+.notification-time { padding: 2px 7px 0 4px; color: #929aa2; font-size: 11px; white-space: nowrap; }
+.notification-detail { flex: none; padding: 12px 15px 14px; border-top: 1px solid #dde3ea; background: #fff; box-shadow: 0 -4px 14px rgba(29, 52, 75, .05); }
+.notification-detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.notification-detail-head b { font-size: 13px; }
+.notification-detail-head span { margin-left: auto; color: #8b949d; font-size: 11px; }
+.notification-detail p { margin: 0 0 9px; color: #53606a; font-size: 12px; line-height: 1.65; }
+.notification-meta { display: grid; grid-template-columns: 66px 1fr; row-gap: 4px; margin-bottom: 10px; font-size: 11px; }
+.notification-meta span:nth-child(odd) { color: #929aa2; }
+.notification-meta span:nth-child(even) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.notification-detail-actions { display: flex; justify-content: flex-end; gap: 7px; }
+.notification-detail-actions .btn { height: 27px; font-size: 12px; }
+.notification-empty { height: 100%; display: grid; place-items: center; color: #9aa3ac; font-size: 12px; }
 
 .sidebar {
   position: absolute; left: 0; top: var(--titlebar-height); bottom: 0;
