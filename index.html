@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Trader 端桌面交易工作台高保真原型" />
+    <title>Trader Workspace Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg class="svg-defs" aria-hidden="true">
+      <symbol id="i-market" viewBox="0 0 24 24"><path d="M4 17.5 9 12l3.5 3.5L20 7"/><path d="M15 7h5v5"/><rect x="2.5" y="2.5" width="19" height="19" rx="3"/></symbol>
+      <symbol id="i-trade" viewBox="0 0 24 24"><rect x="2.5" y="3.5" width="19" height="17" rx="3"/><path d="m7 9 3-3 3 3M10 6v7m7 2-3 3-3-3m3 3v-7"/></symbol>
+      <symbol id="i-lend" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M7 9.5h10M7 14.5h10M9 7l-2 2.5L9 12m6 0 2 2.5L15 17"/><path d="M12 4v16"/></symbol>
+      <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="10" cy="6" rx="6.5" ry="3"/><path d="M3.5 6v8c0 1.7 2.9 3 6.5 3 1 0 2-.1 2.8-.3M3.5 10c0 1.7 2.9 3 6.5 3 1.4 0 2.8-.2 3.8-.7"/><circle cx="17" cy="17" r="4"/><path d="m20 20 2 2"/></symbol>
+      <symbol id="i-risk" viewBox="0 0 24 24"><path d="M12 2.5 20 6v5.5c0 5.1-3.4 8.3-8 10-4.6-1.7-8-4.9-8-10V6l8-3.5Z"/><path d="M13 6.5 8.5 13H12l-1 4.5 4.5-7H12l1-4Z"/></symbol>
+      <symbol id="i-strategy" viewBox="0 0 24 24"><path d="M8 2v5H3v5h5v4H3v5h5M16 2v5h5v5h-5v4h5v5h-5M8 9h8v10H8z"/></symbol>
+      <symbol id="i-config" viewBox="0 0 24 24"><path d="M5 3v5m0 4v9M12 3v10m0 4v4M19 3v3m0 4v11"/><path d="M2 8h6M9 13h6M16 6h6"/></symbol>
+      <symbol id="i-approve" viewBox="0 0 24 24"><path d="M6 21v-2.2c0-2.1 2.7-3.8 6-3.8s6 1.7 6 3.8V21"/><circle cx="12" cy="8" r="4"/><path d="m17 12 2 2 3-4"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    </svg>
+
+    <div class="app-shell">
+      <header class="titlebar">
+        <div class="brand-mark">M</div>
+        <div class="product-title">对冲台管理端 · 原型工作台</div>
+        <div class="user-chip"><span class="user-dot"></span> Trader Demo</div>
+        <div class="window-tools" aria-label="窗口状态"><span>●</span><span>◔</span><span>▣</span><span>◉</span><b></b><span>—</span><span>□</span><span>×</span></div>
+      </header>
+
+      <aside class="sidebar" aria-label="主导航">
+        <nav id="mainNav"></nav>
+        <button class="nav-item system-button" data-view="system" type="button">
+          <svg><use href="#i-settings"></use></svg><span>系统</span>
+        </button>
+      </aside>
+
+      <main id="workspace" class="workspace" tabindex="-1"></main>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
