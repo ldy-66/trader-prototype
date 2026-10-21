@@ -74,6 +74,8 @@ let state = {
   dataTab: "资金管理",
   dataParty: "对客方",
   dataRange: "今天",
+  positionBoardFilter: "全部",
+  positionBoardApplied: "全部",
   riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
@@ -289,8 +291,18 @@ function fundManagementPage() {
 }
 
 function positionDetailPage() {
-  const rows = [["演示客户01", "DEMO-1001", "DEMO-TR01", "000001.SZ", "平安银行", "深交所", "CNY", "CNY", "120,000", "117,000", "10.80", "10.41", "10.62", "1,296,000.00", "46,800.00", "3.75%", "多头"], ["演示客户02", "DEMO-1002", "DEMO-TR02", "600000.SH", "浦发银行", "上交所", "CNY", "CNY", "80,000", "75,000", "9.52", "9.26", "9.38", "761,600.00", "20,800.00", "2.81%", "多头"]];
-  return `${filterToolbar(["客户名", "资金账户", "交易账户", "标的代码", "交易市场"], true)}${tablePage(["客户名","资金账户号","交易账户","标的代码","标的名称","交易市场","账户币种","股票币种","持仓数量","可用数量","最新价","成本价","持仓均价","市值","持仓盈亏","持仓盈亏率","持仓类型"], rows)}`;
+  const records = [
+    ["主板", "演示客户01", "DEMO-1001", "DEMO-TR01", "000001.SZ", "平安银行", "深交所", "CNY", "CNY", "120,000", "117,000", "10.80", "10.41", "10.62", "1,296,000.00", "46,800.00", "3.75%", "多头"],
+    ["主板", "演示客户02", "DEMO-1002", "DEMO-TR02", "600000.SH", "浦发银行", "上交所", "CNY", "CNY", "80,000", "75,000", "9.52", "9.26", "9.38", "761,600.00", "20,800.00", "2.81%", "多头"],
+    ["科创板", "演示客户03", "DEMO-1003", "DEMO-TR03", "688001.SH", "华兴源创", "上交所", "CNY", "CNY", "12,000", "12,000", "32.80", "31.40", "31.80", "393,600.00", "16,800.00", "4.46%", "多头"],
+    ["创业板", "演示客户04", "DEMO-1004", "DEMO-TR04", "300750.SZ", "宁德时代", "深交所", "CNY", "CNY", "2,000", "1,800", "205.00", "198.50", "201.20", "410,000.00", "13,000.00", "3.27%", "多头"],
+    ["港股", "演示客户05", "DEMO-1005", "DEMO-TR05", "00700.HK", "腾讯控股", "港交所", "HKD", "HKD", "1,000", "1,000", "520.00", "500.00", "510.00", "520,000.00", "20,000.00", "4.00%", "多头"],
+    ["美股", "演示客户06", "DEMO-1006", "DEMO-TR06", "AAPL.US", "Apple", "NASDAQ", "USD", "USD", "500", "500", "230.00", "220.00", "225.00", "115,000.00", "5,000.00", "4.55%", "多头"],
+  ];
+  const rows = records.filter(([board]) => state.positionBoardApplied === "全部" || board === state.positionBoardApplied).map(([, ...values]) => values);
+  const boardOptions = ["全部", "主板", "科创板", "创业板", "港股", "美股"].map(board => `<option value="${board}" ${board === state.positionBoardFilter ? "selected" : ""}>${board}</option>`).join("");
+  const boardField = `<label class="board-filter-field"><span>板块</span><select class="field board-filter" data-position-board-filter>${boardOptions}</select></label>`;
+  return `${filterToolbar(["客户名", "资金账户", "交易账户", "标的代码", "交易市场"], true, boardField)}${tablePage(["客户名","资金账户号","交易账户","标的代码","标的名称","交易市场","账户币种","股票币种","持仓数量","可用数量","最新价","成本价","持仓均价","市值","持仓盈亏","持仓盈亏率","持仓类型"], rows)}`;
 }
 
 function exchangeRatePage() {
@@ -324,8 +336,8 @@ function historyOrderPage() {
   return `${historyToolbar(["标的代码", "交易账户", "业务标识", "订单状态"])}<div class="dimension-bar"><span>汇总维度</span>${["委托单笔","标的代码+订单方向","标的代码+订单方向+日期","标的代码+订单方向+业务类型"].map((x,i)=>`<button class="dimension-btn ${i===0?"active":""}">${x}</button>`).join("")}</div>${tablePage(["日期","委托编号","交易账户","客户名","资金账户号","订单模式","标的代码","标的名称","订单方向","委托价格","委托数量","订单类型","成交均价","成交数量","成交金额","订单状态","对冲渠道"], rows, "合计　成交数量 7,000　成交金额 69,160.00")}`;
 }
 
-function filterToolbar(labels, exportable=false) {
-  return `<div class="toolbar compact data-filter">${labels.map(x=>`<input class="field" placeholder="${x}">`).join("")}<button class="btn primary" data-data-query>查询</button>${exportable?`<button class="btn ghost" data-data-export>导出</button>`:""}</div>`;
+function filterToolbar(labels, exportable=false, extraField="") {
+  return `<div class="toolbar compact data-filter">${labels.map(x=>`<input class="field" placeholder="${x}">`).join("")}${extraField}<button class="btn primary" data-data-query>查询</button>${exportable?`<button class="btn ghost" data-data-export>导出</button>`:""}</div>`;
 }
 
 function historyToolbar(labels) {
@@ -446,7 +458,14 @@ function bindInteractions() {
   document.querySelectorAll("[data-data-tab]").forEach(btn => btn.addEventListener("click", () => { if(!implementedDataTabs.includes(btn.dataset.dataTab)) return notify(`${btn.dataset.dataTab}在当前知识库中缺少完整 PC 页面资料`); state.dataTab=btn.dataset.dataTab; render(); }));
   document.querySelectorAll("[data-data-party]").forEach(btn => btn.addEventListener("click", () => { state.dataParty=btn.dataset.dataParty; render(); }));
   document.querySelectorAll("[data-date-range]").forEach(btn => btn.addEventListener("click", () => { state.dataRange=btn.dataset.dateRange; render(); }));
-  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}查询条件已应用（原型）`)));
+  document.querySelectorAll("[data-position-board-filter]").forEach(select => select.addEventListener("change", () => { state.positionBoardFilter = select.value; }));
+  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => {
+    if (state.dataTab === "持仓信息") {
+      state.positionBoardApplied = state.positionBoardFilter;
+      render();
+    }
+    notify(`${state.dataTab}查询条件已应用（原型）`);
+  }));
   document.querySelectorAll("[data-data-export]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}当前结果已生成演示导出`)));
   document.querySelectorAll("[data-trade-type]").forEach(btn => btn.addEventListener("click", () => { state.tradeType = btn.dataset.tradeType; render(); }));
   document.querySelectorAll("[data-direction]").forEach(btn => btn.addEventListener("click", () => { state.direction = btn.dataset.direction; render(); }));
