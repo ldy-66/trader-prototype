@@ -279,6 +279,27 @@ button { cursor: pointer; }
 .dimension-bar { flex: none; min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 5px 10px; border-bottom: 1px solid #e2e5e8; }
 .dimension-bar span { color: #6e7780; margin-right: 3px; }
 .data-summary { flex: none; height: 35px; padding: 9px 14px; text-align: right; border-top: 1px solid #d9dde2; background: #fafbfc; font-weight: 600; }
+.holdings-subtabs { flex: none; min-height: 36px; display: flex; align-items: end; gap: 3px; padding: 0 10px; border-bottom: 1px solid #dfe3e7; }
+.holdings-subtabs button { height: 32px; min-width: 92px; border: 0; border-bottom: 2px solid transparent; color: #68727c; background: transparent; cursor: pointer; }
+.holdings-subtabs button.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+.holdings-subtabs .demo-note { margin: 0 0 7px auto; color: #8b949d; font-size: 11px; }
+.holdings-filter { align-items: end; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+.holdings-filter-field { display: inline-flex; align-items: center; gap: 6px; color: #606974; white-space: nowrap; }
+.holdings-filter-field .field { min-width: 145px; }
+.holdings-filter .board-filter { min-width: 112px; width: 112px; }
+.range-separator { color: #717b85; padding-bottom: 6px; }
+.holdings-result { overflow: auto; }
+.holdings-result table { min-width: 1180px; }
+.holdings-link { border: 0; padding: 0; color: #3785ed; background: transparent; cursor: pointer; text-decoration: underline; }
+.holdings-link:hover { color: #1768cc; }
+.detail-dialog { width: min(1050px, calc(100vw - 130px)); }
+.detail-facts { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 0 18px; border: 1px solid #e1e5e9; border-bottom: 0; }
+.detail-facts > div { min-height: 38px; display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid #e1e5e9; }
+.detail-facts span { color: #7b858e; white-space: nowrap; }
+.detail-facts b { color: #3f4850; font-weight: 500; }
+.detail-section-title { margin: 17px 0 7px; font-weight: 600; }
+.detail-table-wrap { max-height: 200px; overflow: auto; }
+.detail-table-wrap table { min-width: 680px; }
 .summary-cards { flex: none; display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 8px; padding: 8px 10px; border-bottom: 1px solid #e0e4e8; }
 .summary-cards > div { min-height: 57px; padding: 8px 12px; border: 1px solid #d7dce1; border-radius: 5px; background: #fbfcfd; }
 .summary-cards span { display: block; color: #737c85; margin-bottom: 5px; }

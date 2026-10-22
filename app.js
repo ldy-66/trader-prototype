@@ -76,6 +76,13 @@ let state = {
   dataRange: "今天",
   positionBoardFilter: "全部",
   positionBoardApplied: "全部",
+  positionView: "summary",
+  positionSummaryMode: "客户+渠道",
+  positionSummaryModeApplied: "客户+渠道",
+  positionTradeStart: "2026-10-21",
+  positionTradeEnd: "2026-10-22",
+  positionSymbolQuery: "",
+  positionSymbolApplied: "",
   riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
@@ -291,18 +298,77 @@ function fundManagementPage() {
 }
 
 function positionDetailPage() {
-  const records = [
-    ["主板", "演示客户01", "DEMO-1001", "DEMO-TR01", "000001.SZ", "平安银行", "深交所", "CNY", "CNY", "120,000", "117,000", "10.80", "10.41", "10.62", "1,296,000.00", "46,800.00", "3.75%", "多头"],
-    ["主板", "演示客户02", "DEMO-1002", "DEMO-TR02", "600000.SH", "浦发银行", "上交所", "CNY", "CNY", "80,000", "75,000", "9.52", "9.26", "9.38", "761,600.00", "20,800.00", "2.81%", "多头"],
-    ["科创板", "演示客户03", "DEMO-1003", "DEMO-TR03", "688001.SH", "华兴源创", "上交所", "CNY", "CNY", "12,000", "12,000", "32.80", "31.40", "31.80", "393,600.00", "16,800.00", "4.46%", "多头"],
-    ["创业板", "演示客户04", "DEMO-1004", "DEMO-TR04", "300750.SZ", "宁德时代", "深交所", "CNY", "CNY", "2,000", "1,800", "205.00", "198.50", "201.20", "410,000.00", "13,000.00", "3.27%", "多头"],
-    ["港股", "演示客户05", "DEMO-1005", "DEMO-TR05", "00700.HK", "腾讯控股", "港交所", "HKD", "HKD", "1,000", "1,000", "520.00", "500.00", "510.00", "520,000.00", "20,000.00", "4.00%", "多头"],
-    ["美股", "演示客户06", "DEMO-1006", "DEMO-TR06", "AAPL.US", "Apple", "NASDAQ", "USD", "USD", "500", "500", "230.00", "220.00", "225.00", "115,000.00", "5,000.00", "4.55%", "多头"],
-  ];
-  const rows = records.filter(([board]) => state.positionBoardApplied === "全部" || board === state.positionBoardApplied).map(([, ...values]) => values);
-  const boardOptions = ["全部", "主板", "科创板", "创业板", "港股", "美股"].map(board => `<option value="${board}" ${board === state.positionBoardFilter ? "selected" : ""}>${board}</option>`).join("");
-  const boardField = `<label class="board-filter-field"><span>板块</span><select class="field board-filter" data-position-board-filter>${boardOptions}</select></label>`;
-  return `${filterToolbar(["客户名", "资金账户", "交易账户", "标的代码", "交易市场"], true, boardField)}${tablePage(["客户名","资金账户号","交易账户","标的代码","标的名称","交易市场","账户币种","股票币种","持仓数量","可用数量","最新价","成本价","持仓均价","市值","持仓盈亏","持仓盈亏率","持仓类型"], rows)}`;
+  const boards = ["全部", "主板", "科创板", "创业板", "港股", "美股"];
+  const modes = ["客户+渠道", "客户+标的", "渠道+标的", "标的汇总"];
+  const modeOptions = modes.map(mode => `<option ${state.positionSummaryMode === mode ? "selected" : ""}>${mode}</option>`).join("");
+  const boardOptions = boards.map(board => `<option ${state.positionBoardFilter === board ? "selected" : ""}>${board}</option>`).join("");
+  const tabs = `<div class="holdings-subtabs"><button class="${state.positionView === "summary" ? "active" : ""}" data-holdings-view="summary">持仓汇总</button><button class="${state.positionView === "query" ? "active" : ""}" data-holdings-view="query">持仓查询</button><span class="demo-note">演示数据</span></div>`;
+  if (state.positionView === "summary") {
+    const { columns, rows, totals } = buildHoldingsSummary(state.positionSummaryModeApplied, state.positionBoardApplied);
+    const filter = `<div class="toolbar compact data-filter holdings-filter">
+      <label class="holdings-filter-field"><span>持仓日期</span><input class="field" type="date" value="2026-10-22"></label>
+      <label class="holdings-filter-field"><span>汇总方式</span><select class="field" data-position-summary-mode>${modeOptions}</select></label>
+      <label class="board-filter-field"><span>板块</span><select class="field board-filter" data-position-board-filter>${boardOptions}</select></label>
+      <button class="btn primary" data-holdings-query>查询</button><button class="btn ghost" data-holdings-export>导出</button>
+    </div>`;
+    const totalText = ["期初持仓", "持仓", "可用（T+0）", "冻结", "可用（T+1）"].map((label, index) => `${label} ${formatHoldingNumber(totals[index])}`).join("　");
+    return `${tabs}${filter}${holdingsTable(columns, rows, `持仓汇总 · ${state.positionSummaryModeApplied}　合计：${totalText}`)}`;
+  }
+  const rows = positionTradeRows.filter(row => (state.positionBoardApplied === "全部" || row.board === state.positionBoardApplied) && row.date >= state.positionTradeStart && row.date <= state.positionTradeEnd && (!state.positionSymbolApplied || row.symbol.toLowerCase().includes(state.positionSymbolApplied.toLowerCase())));
+  const filter = `<div class="toolbar compact data-filter holdings-filter">
+    <label class="holdings-filter-field"><span>交易日期</span><input class="field" type="date" data-holdings-start value="${state.positionTradeStart}"></label><span class="range-separator">至</span>
+    <label class="holdings-filter-field"><span>　</span><input class="field" type="date" data-holdings-end value="${state.positionTradeEnd}"></label>
+    <label class="board-filter-field"><span>板块</span><select class="field board-filter" data-position-board-filter>${boardOptions}</select></label>
+    <input class="field" placeholder="标的代码" data-holdings-symbol value="${state.positionSymbolQuery}"><button class="btn primary" data-holdings-query>查询</button><button class="btn ghost" data-holdings-export>导出</button>
+  </div>`;
+  return `${tabs}${filter}${holdingsTable(["标的代码", "订单编号", "成交编号", "交易日期", "交易方向", "交易数量", "持仓数量"], rows.map(row => [row.symbol, `<button class="holdings-link" data-holdings-detail="order">${row.order}</button>`, `<button class="holdings-link" data-holdings-detail="trade">${row.trade}</button>`, row.date, row.direction, formatHoldingNumber(row.quantity), formatHoldingNumber(row.position)]), "持仓交易明细")}`;
+}
+
+const holdingRecords = [
+  { board: "主板", customer: "演示客户01", channel: "QFII-DEMO", symbol: "000001.SZ", name: "平安银行", market: "深交所", opening: 120000, position: 130000, t0: 85000, frozen: 5000, t1: 12000 },
+  { board: "主板", customer: "演示客户02", channel: "CHANNEL-B", symbol: "000001.SZ", name: "平安银行", market: "深交所", opening: 60000, position: 55000, t0: 40000, frozen: 3000, t1: 12000 },
+  { board: "主板", customer: "演示客户01", channel: "CHANNEL-B", symbol: "600000.SH", name: "浦发银行", market: "上交所", opening: 80000, position: 78000, t0: 65000, frozen: 2000, t1: 11000 },
+  { board: "科创板", customer: "演示客户03", channel: "QFII-DEMO", symbol: "688001.SH", name: "华兴源创", market: "上交所", opening: 8000, position: 9000, t0: 6000, frozen: 500, t1: 2500 },
+  { board: "创业板", customer: "演示客户02", channel: "CHANNEL-B", symbol: "300750.SZ", name: "宁德时代", market: "深交所", opening: 10000, position: 10000, t0: 8000, frozen: 1000, t1: 1000 },
+  { board: "港股", customer: "演示客户04", channel: "HK-DEMO", symbol: "00700.HK", name: "腾讯控股", market: "港交所", opening: 1000, position: 1200, t0: 800, frozen: 100, t1: 300 },
+  { board: "美股", customer: "演示客户04", channel: "US-DEMO", symbol: "AAPL.US", name: "Apple", market: "NASDAQ", opening: 500, position: 550, t0: 550, frozen: 0, t1: 0 },
+];
+
+const positionTradeRows = [
+  { board: "主板", symbol: "000001.SZ", order: "ORD-DEMO-001", trade: "EXEC-DEMO-001", date: "2026-10-22", direction: "买入", quantity: 2000, position: 130000 },
+  { board: "主板", symbol: "000001.SZ", order: "ORD-DEMO-002", trade: "EXEC-DEMO-002", date: "2026-10-22", direction: "卖出", quantity: 1000, position: 55000 },
+  { board: "主板", symbol: "600000.SH", order: "ORD-DEMO-003", trade: "EXEC-DEMO-003", date: "2026-10-21", direction: "买入", quantity: 3000, position: 78000 },
+  { board: "科创板", symbol: "688001.SH", order: "ORD-DEMO-004", trade: "EXEC-DEMO-004", date: "2026-10-22", direction: "买入", quantity: 1000, position: 9000 },
+  { board: "创业板", symbol: "300750.SZ", order: "ORD-DEMO-005", trade: "EXEC-DEMO-005", date: "2026-10-21", direction: "卖出", quantity: 500, position: 10000 },
+  { board: "港股", symbol: "00700.HK", order: "ORD-DEMO-006", trade: "EXEC-DEMO-006", date: "2026-10-22", direction: "买入", quantity: 200, position: 1200 },
+  { board: "美股", symbol: "AAPL.US", order: "ORD-DEMO-007", trade: "EXEC-DEMO-007", date: "2026-10-22", direction: "买入", quantity: 50, position: 550 },
+];
+
+function formatHoldingNumber(value) { return Number(value).toLocaleString("zh-CN"); }
+
+function buildHoldingsSummary(mode, board) {
+  const groups = {
+    "客户+渠道": ["customer", "channel", "symbol", "name", "market"],
+    "客户+标的": ["customer", "symbol", "name", "market"],
+    "渠道+标的": ["channel", "symbol", "name", "market"],
+    "标的汇总": ["symbol", "name", "market"],
+  };
+  const names = { customer: "客户", channel: "渠道", symbol: "标的代码", name: "简称", market: "市场" };
+  const keys = groups[mode] || groups["客户+渠道"];
+  const aggregate = new Map();
+  holdingRecords.filter(row => board === "全部" || row.board === board).forEach(row => {
+    const key = keys.map(field => row[field]).join("|");
+    if (!aggregate.has(key)) aggregate.set(key, { ...Object.fromEntries(keys.map(field => [field, row[field]])), opening: 0, position: 0, t0: 0, frozen: 0, t1: 0 });
+    const target = aggregate.get(key);
+    ["opening", "position", "t0", "frozen", "t1"].forEach(field => target[field] += row[field]);
+  });
+  const metricNames = { opening: "期初持仓数量", position: "持仓数量", t0: "可用数量（T+0）", frozen: "冻结数量", t1: "可用数量（T+1）" };
+  const totals = ["opening", "position", "t0", "frozen", "t1"].map(field => holdingRecords.filter(row => board === "全部" || row.board === board).reduce((sum, row) => sum + row[field], 0));
+  return { columns: [...keys.map(field => names[field]), ...Object.values(metricNames)], rows: [...aggregate.values()].map(row => [...keys.map(field => row[field]), ...["opening", "position", "t0", "frozen", "t1"].map(field => formatHoldingNumber(row[field]))]), totals };
+}
+
+function holdingsTable(columns, rows, summary = "", detailLinks = false) {
+  return `<div class="table-wrap standalone-data-table holdings-result"><table class="data-table"><thead><tr><th style="width:46px">序号</th>${columns.map(column => `<th>${column}</th>`).join("")}</tr></thead><tbody>${rows.map((row, i) => `<tr class="${i === 0 ? "selected" : ""}"><td>${i + 1}</td>${row.map(value => `<td>${value}</td>`).join("")}</tr>`).join("")}</tbody></table>${rows.length ? "" : `<div class="empty-hint">暂无符合条件的持仓记录</div>`}</div>${summary ? `<div class="data-summary">${summary} · 共 ${rows.length} 条</div>` : ""}`;
 }
 
 function exchangeRatePage() {
@@ -415,6 +481,22 @@ function approvalView() {
 function modalView() {
   if (!state.modal) return "";
   const close = `<button class="modal-close" data-close-modal aria-label="关闭">×</button>`;
+  if (["holdings-order", "holdings-trade"].includes(state.modal.type)) {
+    const isOrder = state.modal.type === "holdings-order";
+    const title = isOrder ? "订单详情" : "交易详情";
+    const facts = isOrder
+      ? [["交易员", "DEMO交易员01"], ["资金账号", "DEMO-1001"], ["对冲渠道", "QFII-DEMO"], ["提交时间", "2026-10-22 10:18:20"], ["委托价格", "10.80"], ["委托数量", "2,000"], ["交易方式", "普通交易"], ["算法策略", "TWAP（演示）"], ["委托方式", "限价单"], ["成交数量", "2,000"], ["成交均价", "10.78"], ["交易方向", "买入"], ["累计利息", "--"], ["框架", "DEMO-FRAME"]]
+      : [["交易员", "DEMO交易员01"], ["资金账号", "DEMO-1001"], ["对冲渠道", "QFII-DEMO"], ["提交时间", "2026-10-22 10:18:20"], ["成交价格", "10.78"], ["成交数量", "2,000"], ["交易方式", "普通交易"], ["算法策略", "TWAP（演示）"], ["委托方式", "限价单"]];
+    const logs = isOrder
+      ? [["2026-10-22 10:19:02", "QFII-DEMO", "成交反馈", "成交数量 2,000；成交编号 EXEC-DEMO-001"], ["2026-10-22 10:18:45", "审批员A", "审批", "审批通过"], ["2026-10-22 10:18:30", "DEMO交易员01", "修改", "委托数量：1,500 → 2,000"], ["2026-10-22 10:18:21", "QFII-DEMO", "错误反馈", "渠道返回演示异常：价格精度不符合要求，调整后重新提交"], ["2026-10-22 10:18:20", "DEMO交易员01", "提交", "备注：演示订单"]]
+      : [["2026-10-22 10:19:02", "QFII-DEMO", "成交反馈", "成交数量 2,000；成交编号 EXEC-DEMO-001"], ["2026-10-22 10:18:30", "DEMO交易员01", "修改", "交易数量：1,500 → 2,000"], ["2026-10-22 10:18:21", "QFII-DEMO", "错误反馈", "渠道返回演示异常：价格精度不符合要求，调整后重新提交"], ["2026-10-22 10:18:20", "DEMO交易员01", "提交", "备注：演示成交"]];
+    return `<div class="modal-mask"><section class="dialog wide-dialog detail-dialog"><header><h3>${title}</h3>${close}</header><div class="dialog-body">
+      <div class="detail-facts">${facts.map(([label, value]) => `<div><span>${label}</span><b>${value}</b></div>`).join("")}</div>
+      <div class="detail-section-title">日志（按更新时间倒序）</div><div class="table-wrap detail-table-wrap"><table class="data-table"><thead><tr><th>事件时间</th><th>操作人</th><th>事件名称</th><th>事件内容</th></tr></thead><tbody>${logs.map(row => `<tr>${row.map(value => `<td>${value}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+      ${isOrder ? `<div class="detail-section-title">子单成交信息</div><div class="table-wrap detail-table-wrap"><table class="data-table"><thead><tr><th>标的代码</th><th>成交编号</th><th>交易日期</th><th>交易方向</th><th>交易数量</th></tr></thead><tbody><tr><td>000001.SZ</td><td>EXEC-DEMO-001</td><td>2026-10-22</td><td>买入</td><td>2,000</td></tr></tbody></table></div>` : ""}
+      <div class="field-help">演示详情；事件字段内容用于展示交互，最终以需求确认和接口数据为准。</div>
+    </div><footer><button class="btn primary" data-close-modal>关闭</button></footer></section></div>`;
+  }
   if (state.modal.type === "risk-rule") return `<div class="modal-mask"><section class="dialog wide-dialog"><header><h3>新增风控规则</h3>${close}</header><div class="dialog-body form-grid">
     <label><span>规则分类</span><select id="newRiskCategory"><option>交易事前</option><option>交易事中</option><option>资管事前</option></select></label>
     <label><span>风控类型</span><select id="newRiskType"><option>禁止交易</option><option>黑名单</option><option>白名单</option><option>单笔委托数量</option><option>价格偏离度</option><option>下单频率</option><option>可用名本集中度</option><option>NAV集中度</option><option>NAV单笔订单市值</option><option>对敲交易</option><option>反向交易</option><option>委托量占比</option></select></label>
@@ -459,6 +541,14 @@ function bindInteractions() {
   document.querySelectorAll("[data-data-party]").forEach(btn => btn.addEventListener("click", () => { state.dataParty=btn.dataset.dataParty; render(); }));
   document.querySelectorAll("[data-date-range]").forEach(btn => btn.addEventListener("click", () => { state.dataRange=btn.dataset.dateRange; render(); }));
   document.querySelectorAll("[data-position-board-filter]").forEach(select => select.addEventListener("change", () => { state.positionBoardFilter = select.value; }));
+  document.querySelectorAll("[data-position-summary-mode]").forEach(select => select.addEventListener("change", () => { state.positionSummaryMode = select.value; }));
+  document.querySelectorAll("[data-holdings-start]").forEach(input => input.addEventListener("change", () => { state.positionTradeStart = input.value; }));
+  document.querySelectorAll("[data-holdings-end]").forEach(input => input.addEventListener("change", () => { state.positionTradeEnd = input.value; }));
+  document.querySelectorAll("[data-holdings-symbol]").forEach(input => input.addEventListener("input", () => { state.positionSymbolQuery = input.value; }));
+  document.querySelectorAll("[data-holdings-view]").forEach(btn => btn.addEventListener("click", () => { state.positionView = btn.dataset.holdingsView; render(); }));
+  document.querySelectorAll("[data-holdings-query]").forEach(btn => btn.addEventListener("click", () => { state.positionBoardApplied = state.positionBoardFilter; state.positionSummaryModeApplied = state.positionSummaryMode; state.positionSymbolApplied = state.positionSymbolQuery; render(); notify("持仓查询条件已应用（演示数据）"); }));
+  document.querySelectorAll("[data-holdings-export]").forEach(btn => btn.addEventListener("click", () => notify("当前持仓结果已生成演示导出")));
+  document.querySelectorAll("[data-holdings-detail]").forEach(btn => btn.addEventListener("click", () => { state.modal = { type: btn.dataset.holdingsDetail === "order" ? "holdings-order" : "holdings-trade" }; render(); }));
   document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => {
     if (state.dataTab === "持仓信息") {
       state.positionBoardApplied = state.positionBoardFilter;
