@@ -259,13 +259,27 @@ button { cursor: pointer; }
 .tree-node.selected-node { color: var(--blue); background: #eaf2ff; }
 .holdings { display: grid; grid-template-rows: 1fr 370px; min-width: 0; min-height: 0; }
 .holdings .table-wrap { grid-row: 2; }
-.fund-workspace { min-width: 0; min-height: 0; display: grid; grid-template-rows: 44% 56%; gap: 6px; padding-left: 6px; }
-.fund-table, .position-summary { min-width: 0; }
-.fund-table table, .position-summary table { min-width: 1450px; }
+.fund-workspace { min-width: 0; min-height: 0; display: grid; grid-template-rows: 1fr; padding-left: 6px; }
+.fund-table { min-width: 0; }
+.fund-table table { min-width: 1450px; }
 .subsection-title { position: sticky; left: 0; height: 31px; padding: 7px 10px; border-bottom: 1px solid #c7cdd4; background: #fff; font-weight: 600; }
 .short-select { min-width: 82px; }
 .standalone-data-table { flex: 1; min-height: 0; }
 .standalone-data-table table { min-width: 1120px; }
+.position-query-page { min-height: 0; flex: 1; display: flex; flex-direction: column; }
+.position-filters { flex: none; display: flex; flex-direction: column; gap: 0; }
+.position-filters .toolbar { min-height: 34px; gap: 7px; padding-left: 9px; padding-right: 9px; }
+.position-filters .field { min-width: 125px; flex: 1; }
+.position-controls { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #e2e5e8; }
+.position-market-tabs, .position-mode-switch { height: 100%; display: flex; align-items: center; gap: 12px; }
+.position-market-tabs button { height: 29px; min-width: 72px; border: 0; background: transparent; color: #242a30; }
+.position-market-tabs button.active { color: #fff; background: #373c44; }
+.position-mode { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 3px 2px; background: transparent; color: #282d33; }
+.radio-dot { width: 16px; height: 16px; display: inline-grid; place-items: center; border: 1px solid #555d65; border-radius: 50%; }
+.position-mode.active .radio-dot::after { width: 8px; height: 8px; border-radius: 50%; background: #2885df; content: ""; }
+.position-mode.active { color: #1c76d1; }
+.position-query-page .standalone-data-table { margin: 0 6px; }
+.position-query-page .standalone-data-table table { min-width: 1520px; }
 .data-filter { overflow-x: auto; }
 .data-filter .field { min-width: 145px; }
 .history-tools { flex: none; border-bottom: 1px solid #e2e5e8; }
