@@ -18,6 +18,7 @@
       <symbol id="i-config" viewBox="0 0 24 24"><path d="M5 3v5m0 4v9M12 3v10m0 4v4M19 3v3m0 4v11"/><path d="M2 8h6M9 13h6M16 6h6"/></symbol>
       <symbol id="i-approve" viewBox="0 0 24 24"><path d="M6 21v-2.2c0-2.1 2.7-3.8 6-3.8s6 1.7 6 3.8V21"/><circle cx="12" cy="8" r="4"/><path d="m17 12 2 2 3-4"/></symbol>
       <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
     </svg>
 
     <div class="app-shell">
@@ -25,6 +26,13 @@
         <div class="brand-mark">M</div>
         <div class="product-title">对冲台管理端 · 原型工作台</div>
         <div class="user-chip"><span class="user-dot"></span> Trader Demo</div>
+        <div class="notification-center">
+          <button id="notificationBell" class="notification-bell" type="button" aria-label="消息通知" aria-expanded="false">
+            <svg><use href="#i-bell"></use></svg>
+            <span id="notificationBadge" class="notification-badge"></span>
+          </button>
+          <div id="notificationLayer"></div>
+        </div>
         <div class="window-tools" aria-label="窗口状态"><span>●</span><span>◔</span><span>▣</span><span>◉</span><b></b><span>—</span><span>□</span><span>×</span></div>
       </header>
 
