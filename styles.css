@@ -215,8 +215,10 @@ button { cursor: pointer; }
 
 .orders-view .main-column { display: grid; grid-template-rows: 408px 1fr; }
 .orders-panel { display: flex; flex-direction: column; }
-.orders-toolbar { flex-wrap: wrap; align-content: flex-start; min-height: 126px; }
+.orders-toolbar { flex-wrap: wrap; align-content: flex-start; min-height: 94px; }
 .orders-toolbar .field, .orders-toolbar .select-field { min-width: 180px; }
+.orders-toolbar .order-attribute-filter { min-width: 165px; }
+.empty-order-result { height: 72px !important; color: #7a838c; text-align: center; }
 .orders-actions { width: 100%; display: flex; gap: 9px; }
 .split-panels { min-height: 0; display: grid; grid-template-columns: 44% 56%; gap: 7px; }
 .empty-table-panel { display: flex; flex-direction: column; }
@@ -341,3 +343,4 @@ button { cursor: pointer; }
   .cards { gap: 6px; }
   .stat-card { padding-left: 10px; padding-right: 10px; }
 }
+

@@ -22,11 +22,11 @@ const sampleSymbols = [
 ];
 
 const orderRows = [
-  ["买入", "待确认", "普通交易", "DEMO-1001", "QFII-A", "000001.SZ", "HighTouch", "10.80", "2,000"],
-  ["卖出", "已成", "空头交易", "DEMO-1002", "QFII-B", "600000.SH", "LowTouch", "9.52", "5,000"],
-  ["买入", "待撤", "普通交易", "DEMO-1003", "CNY-DEMO", "000001.SZ", "ALL", "10.79", "1,000"],
-  ["卖出", "已撤", "空头交易", "DEMO-1004", "QFII-C", "300212.SZ", "LowTouch", "9.31", "10,000"],
-  ["卖出", "待撤", "空头交易", "DEMO-1005", "QFII-D", "300264.SZ", "HighTouch", "8.85", "100"],
+  ["买入", "待确认", "普通交易", "DEMO-1001", "QFII-A", "000001.SZ", "HighTouch", "10.80", "2,000", "手工委托"],
+  ["卖出", "已成", "空头交易", "DEMO-1002", "QFII-B", "600000.SH", "LowTouch", "9.52", "5,000", ""],
+  ["买入", "待撤", "普通交易", "DEMO-1003", "CNY-DEMO", "000001.SZ", "ALL", "10.79", "1,000", ""],
+  ["卖出", "已撤", "空头交易", "DEMO-1004", "QFII-C", "300212.SZ", "LowTouch", "9.31", "10,000", ""],
+  ["卖出", "待撤", "空头交易", "DEMO-1005", "QFII-D", "300264.SZ", "HighTouch", "8.85", "100", ""],
 ];
 
 const riskRules = [
@@ -68,6 +68,8 @@ let state = {
   noApproval: false,
   manualOrder: false,
   selectedOrder: 0,
+  orderAttributeDraft: "",
+  orderAttributeFilter: "",
   modal: null,
   approvalTab: "待审批事项",
   selectedApproval: 0,
@@ -198,19 +200,22 @@ function tradeSidePanel() {
 }
 
 function ordersView() {
+  const visibleRows = orderRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => !state.orderAttributeFilter || row[9] === state.orderAttributeFilter);
   return `<section class="view with-trade-panel orders-view">
     <div class="main-column">
       <section class="panel orders-panel">
         <div class="panel-title">委托列表</div>
         <div class="toolbar orders-toolbar">
           <select class="select-field"><option>交易对手名称</option></select><select class="select-field"><option>资金账号名称</option></select><select class="select-field"><option>标的代码</option></select><select class="select-field"><option>订单模式</option><option>ALL</option><option>HighTouch</option><option>LowTouch</option></select>
-          <select class="select-field"><option>订单状态</option></select><button class="btn ghost">展开⌄</button><span class="tiny-icon">♟</span><span class="tiny-icon">▣</span><button class="btn primary">筛选</button>
+          <select class="select-field"><option>订单状态</option></select><select class="select-field order-attribute-filter" id="orderAttributeFilter" aria-label="委托属性"><option value="" ${state.orderAttributeDraft === "" ? "selected" : ""}>委托属性</option><option value="手工委托" ${state.orderAttributeDraft === "手工委托" ? "selected" : ""}>手工委托</option></select><button class="btn ghost">展开⌄</button><span class="tiny-icon">♟</span><span class="tiny-icon">▣</span><button class="btn primary" data-order-filter>筛选</button>
           <div class="orders-actions"><button class="btn muted">撤单</button><button class="btn danger">全撤</button><button class="btn primary">批量下单</button></div>
         </div>
-        <div class="table-wrap"><table class="data-table"><colgroup><col style="width:45px"><col style="width:75px"><col style="width:90px"><col style="width:80px"><col style="width:80px"><col style="width:95px"><col style="width:145px"><col style="width:155px"><col style="width:110px"><col style="width:95px"><col style="width:85px"><col style="width:90px"></colgroup>
-          <thead><tr><th>序列</th><th>☐</th><th>操作</th><th>订单方向</th><th>订单状态</th><th>业务类型</th><th>资金账号名称</th><th>框架名称</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th></tr></thead>
-          <tbody>${orderRows.map((r, i) => `<tr data-order-row="${i}" class="${i===state.selectedOrder?"selected":""}"><td>${i + 1}</td><td class="center">□</td><td class="center">${orderActionButtons(r,i)}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
-        <div class="table-footer">第 1 / 9 页, 共 165 条 <select class="select-field" style="min-width:80px"><option>20条/页</option></select><span class="pager">|‹ ‹ › ›|</span></div>
+        <div class="table-wrap"><table class="data-table"><colgroup><col style="width:45px"><col style="width:75px"><col style="width:90px"><col style="width:80px"><col style="width:80px"><col style="width:95px"><col style="width:145px"><col style="width:155px"><col style="width:110px"><col style="width:95px"><col style="width:85px"><col style="width:90px"><col style="width:110px"></colgroup>
+          <thead><tr><th>序列</th><th>☐</th><th>操作</th><th>订单方向</th><th>订单状态</th><th>业务类型</th><th>资金账号名称</th><th>框架名称</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th><th>委托属性</th></tr></thead>
+          <tbody>${visibleRows.length ? visibleRows.map(({ row: r, index }, i) => `<tr data-order-row="${index}" class="${index===state.selectedOrder?"selected":""}"><td>${i + 1}</td><td class="center">□</td><td class="center">${orderActionButtons(r,index)}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v || "--"}</td>`).join("")}</tr>`).join("") : `<tr><td class="empty-order-result" colspan="13">暂无符合条件的委托</td></tr>`}</tbody></table></div>
+        <div class="table-footer">第 1 / 1 页, 共 ${visibleRows.length} 条 <select class="select-field" style="min-width:80px"><option>20条/页</option></select><span class="pager">|‹ ‹ › ›|</span></div>
       </section>
       <div class="split-panels">${executionPanel(state.selectedOrder)}${childOrderPanel(state.selectedOrder)}</div>
     </div>
@@ -516,6 +521,14 @@ function bindInteractions() {
   document.querySelector("#rejectApproval")?.addEventListener("click", () => { approvalRows[state.selectedApproval][5]="审批拒绝"; state.approvalTab="已审批事项"; render(); notify("审批已拒绝并保留审批记录"); });
   document.querySelector("#approvalDetail")?.addEventListener("click", () => notify("已展示委托详情、审批节点及审批前后数据（原型）"));
   document.querySelectorAll("[data-order-row]").forEach(row => row.addEventListener("click", () => { state.selectedOrder=Number(row.dataset.orderRow); render(); }));
+  document.querySelector("#orderAttributeFilter")?.addEventListener("change", event => { state.orderAttributeDraft=event.target.value; });
+  document.querySelector("[data-order-filter]")?.addEventListener("click", () => {
+    state.orderAttributeFilter=state.orderAttributeDraft;
+    const matchingIndexes=orderRows.map((row,index)=>({row,index})).filter(({row})=>!state.orderAttributeFilter||row[9]===state.orderAttributeFilter).map(({index})=>index);
+    if (!matchingIndexes.includes(state.selectedOrder)) state.selectedOrder=matchingIndexes[0] ?? -1;
+    render();
+    notify(`筛选完成，共 ${matchingIndexes.length} 条委托`);
+  });
   document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); const index=Number(btn.dataset.approveOrder); orderRows[index][1] = "已确认"; state.selectedOrder=index; render(); notify("订单已确认，可选择直接下单或拆单"); }));
   document.querySelectorAll("[data-direct-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"direct-order",index:Number(btn.dataset.directOrder)}; render(); }));
   document.querySelectorAll("[data-split-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"split-order",index:Number(btn.dataset.splitOrder)}; render(); }));
@@ -532,7 +545,7 @@ function bindInteractions() {
   document.querySelector("#saveExecution")?.addEventListener("click", () => { const index=state.modal.index; tradeExecutions[index] ||= []; tradeExecutions[index].push([orderRows[index][5],`EXEC-${index+1}${tradeExecutions[index].length+1}`,document.querySelector("#executionPrice").value,Number(document.querySelector("#executionQty").value).toLocaleString(),"手工成交"]); state.modal=null; render(); notify("手工成交已保存并汇总至母单（原型）"); });
   document.querySelector("#resetOrder")?.addEventListener("click", () => { state.price = 10.80; state.quantity = 0; state.noApproval=false; state.manualOrder=false; render(); notify("下单信息已重置"); });
   document.querySelector("#submitOrder")?.addEventListener("click", () => { state.modal={type:"order-confirm"}; render(); });
-  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString()]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
+  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString(),""]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
 }
 
 let toastTimer;
@@ -544,3 +557,4 @@ function notify(message) {
 }
 
 render();
+
