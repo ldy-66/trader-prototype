@@ -75,6 +75,10 @@ let state = {
   dataParty: "对客方",
   positionMode: "明细",
   positionMarket: "证券",
+  executionMode: "成交单笔",
+  appliedExecutionMode: "成交单笔",
+  executionCustomDimensions: ["标的代码", "方向"],
+  appliedExecutionCustomDimensions: ["标的代码", "方向"],
   dataRange: "今天",
   riskCategory: "全部规则",
   riskTab: "风控设置",
@@ -340,10 +344,45 @@ function marginRatePage() {
 }
 
 function executionQueryPage() {
-  const rows = [["2026-10-10", "EXEC-DEMO-001", "DEMO-1001", "演示资金账号01", "DEMO-FRAME", "000001.SZ", "平安银行", "买入", "开仓", "10.78", "2,000", "21,560.00", "深交所", "10:18:32", "QFII-DEMO"], ["2026-10-09", "EXEC-DEMO-002", "DEMO-1002", "演示资金账号02", "DEMO-FRAME", "600000.SH", "浦发银行", "卖出", "平仓", "9.52", "5,000", "47,600.00", "上交所", "14:31:08", "CHANNEL-B"]];
-  return `${historyToolbar(["资金账号", "标的代码", "委托方向", "交易所", "对冲渠道"])}<div class="dimension-bar"><span>查询维度</span>${["成交单笔","证券代码+委托方向","证券代码+委托方向+日期","自定义维度"].map((x,i)=>`<button class="dimension-btn ${i===0?"active":""}">${x}</button>`).join("")}</div>${tablePage(["日期","成交编号","资金账号","资金账号名称","框架名称","证券代码","证券名称","委托方向","开平标识","成交价格","成交数量","成交金额","交易所","成交时间","对冲渠道"], rows, "合计　成交数量 7,000　成交金额 69,160.00")}`;
+  const records = [
+    { date: "2026-10-10", executionId: "EXEC-DEMO-001", tradingAccount: "DEMO-TR01", fundAccount: "DEMO-1001", accountName: "演示资金账号01", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.78, quantity: 2000, amount: 21560, exchange: "深交所", time: "10:18:32", channel: "QFII-DEMO" },
+    { date: "2026-10-10", executionId: "EXEC-DEMO-003", tradingAccount: "DEMO-TR01", fundAccount: "DEMO-1001", accountName: "演示资金账号01", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.70, quantity: 1000, amount: 10700, exchange: "深交所", time: "10:20:06", channel: "QFII-DEMO" },
+    { date: "2026-10-09", executionId: "EXEC-DEMO-004", tradingAccount: "DEMO-TR02", fundAccount: "DEMO-1002", accountName: "演示资金账号02", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.76, quantity: 500, amount: 5380, exchange: "深交所", time: "14:31:08", channel: "CHANNEL-B" },
+    { date: "2026-10-09", executionId: "EXEC-DEMO-002", tradingAccount: "DEMO-TR02", fundAccount: "DEMO-1002", accountName: "演示资金账号02", frame: "DEMO-FRAME", code: "600000.SH", name: "浦发银行", side: "卖出", position: "平仓", price: 9.52, quantity: 5000, amount: 47600, exchange: "上交所", time: "14:35:22", channel: "CHANNEL-B" },
+  ];
+  const modes = ["成交单笔", "证券代码+委托方向", "证券代码+委托方向+日期", "自定义维度"];
+  const customDimensions = ["日期", "交易账户", "标的代码", "方向", "对冲渠道"];
+  const dimensionFields = { "日期": "date", "交易账户": "tradingAccount", "标的代码": "code", "方向": "side", "对冲渠道": "channel" };
+  const mode = state.appliedExecutionMode;
+  const dimensions = mode === "证券代码+委托方向" ? ["标的代码", "方向"] : mode === "证券代码+委托方向+日期" ? ["标的代码", "方向", "日期"] : mode === "自定义维度" ? state.appliedExecutionCustomDimensions : [];
+  const groups = new Map();
+  records.forEach((record, index) => {
+    const key = mode === "成交单笔" ? `single-${index}` : dimensions.map(name => record[dimensionFields[name]]).join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(record);
+  });
+  const uniqueValue = (group, field) => {
+    const values = [...new Set(group.map(record => record[field]))];
+    return values.length === 1 ? values[0] : "--";
+  };
+  const rows = [...groups.values()].map(group => {
+    const quantityComplete = group.every(record => Number.isFinite(record.quantity));
+    const amountComplete = group.every(record => Number.isFinite(record.amount));
+    const totalQuantity = quantityComplete ? group.reduce((sum, record) => sum + record.quantity, 0) : null;
+    const totalAmount = amountComplete ? group.reduce((sum, record) => sum + record.amount, 0) : null;
+    const isSummary = mode !== "成交单笔";
+    const sameSecurity = new Set(group.map(record => record.code)).size === 1;
+    const price = !isSummary ? group[0].price.toFixed(2) : sameSecurity && quantityComplete && amountComplete && totalQuantity > 0 ? (totalAmount / totalQuantity).toFixed(2) : "--";
+    const quantityValue = quantityComplete ? totalQuantity.toLocaleString("en-US") : "--";
+    const amountValue = amountComplete ? totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
+    return [uniqueValue(group, "date"), isSummary ? "--" : group[0].executionId, uniqueValue(group, "tradingAccount"), uniqueValue(group, "fundAccount"), uniqueValue(group, "accountName"), uniqueValue(group, "frame"), uniqueValue(group, "code"), uniqueValue(group, "name"), uniqueValue(group, "side"), uniqueValue(group, "position"), price, quantityValue, amountValue, uniqueValue(group, "exchange"), isSummary ? "--" : group[0].time, uniqueValue(group, "channel")];
+  });
+  const totalQuantity = records.reduce((sum, record) => sum + record.quantity, 0);
+  const totalAmount = records.reduce((sum, record) => sum + record.amount, 0);
+  const modeControls = modes.map(name => `<button class="dimension-btn ${name === state.executionMode ? "active" : ""}" type="button" data-execution-mode="${name}" aria-pressed="${name === state.executionMode}">${name}</button>`).join("");
+  const dimensionControls = state.executionMode === "自定义维度" ? `<div class="dimension-options"><span>自定义维度</span>${customDimensions.map(name => `<button class="dimension-btn ${state.executionCustomDimensions.includes(name) ? "active" : ""}" type="button" data-execution-dimension="${name}" aria-pressed="${state.executionCustomDimensions.includes(name)}">${name}</button>`).join("")}</div>` : "";
+  return `${historyToolbar(["资金账号", "标的代码", "委托方向", "交易所", "对冲渠道"])}<div class="dimension-bar"><span>查询维度</span>${modeControls}</div>${dimensionControls}<div class="query-hint">汇总口径：数量、金额分别求和；同一标的且数量合计大于零时，成交均价 = 成交金额合计 ÷ 成交数量合计。汇总行不展示单笔成交编号和时间。</div>${tablePage(["日期","成交编号","交易账户","资金账号","资金账号名称","框架名称","证券代码","证券名称","委托方向","开平标识","成交价格","成交数量","成交金额","交易所","成交时间","对冲渠道"], rows, `合计　成交数量 ${totalQuantity.toLocaleString("en-US")}　成交金额 ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}`;
 }
-
 function hedgePositionPage() {
   const cards = [["可用资金","8,126,400.00"],["冻结资金","480,000.00"],["期初资金","8,500,000.00"],["持仓市值","2,057,600.00"]];
   const rows = [["QFII-DEMO", "HEDGE-DEMO01", "000001.SZ", "平安银行", "已上市", "多头", "8,000", "120,000", "10,000", "5,000", "10.62", "117,000", "125,000", "1,350,000.00"], ["CHANNEL-B", "HEDGE-DEMO02", "600000.SH", "浦发银行", "已上市", "多头", "3,000", "80,000", "0", "2,000", "9.38", "75,000", "77,000", "733,040.00"]];
@@ -483,8 +522,10 @@ function bindInteractions() {
   document.querySelectorAll("[data-data-party]").forEach(btn => btn.addEventListener("click", () => { state.dataParty=btn.dataset.dataParty; render(); }));
   document.querySelectorAll("[data-position-mode]").forEach(btn => btn.addEventListener("click", () => { state.positionMode=btn.dataset.positionMode; render(); }));
   document.querySelectorAll("[data-position-market]").forEach(btn => btn.addEventListener("click", () => { state.positionMarket=btn.dataset.positionMarket; render(); }));
+  document.querySelectorAll("[data-execution-mode]").forEach(btn => btn.addEventListener("click", () => { state.executionMode=btn.dataset.executionMode; render(); }));
+  document.querySelectorAll("[data-execution-dimension]").forEach(btn => btn.addEventListener("click", () => { const name=btn.dataset.executionDimension; state.executionCustomDimensions=state.executionCustomDimensions.includes(name)?state.executionCustomDimensions.filter(item=>item!==name):[...state.executionCustomDimensions,name]; render(); }));
   document.querySelectorAll("[data-date-range]").forEach(btn => btn.addEventListener("click", () => { state.dataRange=btn.dataset.dateRange; render(); }));
-  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}查询条件已应用（原型）`)));
+  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => { if (state.dataTab === "成交查询") { state.appliedExecutionMode=state.executionMode; state.appliedExecutionCustomDimensions=[...state.executionCustomDimensions]; render(); } notify(`${state.dataTab}查询条件已应用（原型）`); }));
   document.querySelectorAll("[data-data-export]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}当前结果已生成演示导出`)));
   document.querySelectorAll("[data-trade-type]").forEach(btn => btn.addEventListener("click", () => { state.tradeType = btn.dataset.tradeType; render(); }));
   document.querySelectorAll("[data-direction]").forEach(btn => btn.addEventListener("click", () => { state.direction = btn.dataset.direction; render(); }));
