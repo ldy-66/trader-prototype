@@ -22,11 +22,11 @@ const sampleSymbols = [
 ];
 
 const orderRows = [
-  ["买入", "待确认", "普通交易", "DEMO-1001", "QFII-A", "000001.SZ", "HighTouch", "10.80", "2,000"],
-  ["卖出", "已成", "空头交易", "DEMO-1002", "QFII-B", "600000.SH", "LowTouch", "9.52", "5,000"],
-  ["买入", "待撤", "普通交易", "DEMO-1003", "CNY-DEMO", "000001.SZ", "ALL", "10.79", "1,000"],
-  ["卖出", "已撤", "空头交易", "DEMO-1004", "QFII-C", "300212.SZ", "LowTouch", "9.31", "10,000"],
-  ["卖出", "待撤", "空头交易", "DEMO-1005", "QFII-D", "300264.SZ", "HighTouch", "8.85", "100"],
+  ["买入", "待确认", "普通交易", "DEMO-1001", "QFII-A", "000001.SZ", "HighTouch", "10.80", "2,000", "手工委托"],
+  ["卖出", "已成", "空头交易", "DEMO-1002", "QFII-B", "600000.SH", "LowTouch", "9.52", "5,000", ""],
+  ["买入", "待撤", "普通交易", "DEMO-1003", "CNY-DEMO", "000001.SZ", "ALL", "10.79", "1,000", ""],
+  ["卖出", "已撤", "空头交易", "DEMO-1004", "QFII-C", "300212.SZ", "LowTouch", "9.31", "10,000", ""],
+  ["卖出", "待撤", "空头交易", "DEMO-1005", "QFII-D", "300264.SZ", "HighTouch", "8.85", "100", ""],
 ];
 
 const riskRules = [
@@ -57,6 +57,18 @@ const approvalRows = [
   ["AP-20261010-002", "ORD-DEMO-02", "2026-10-10", "10:21:06", "委托（Slice）", "待审批", "是", "600000.SH", "限价单", "5,000", "9.52", "卖出"],
 ];
 
+const notificationRows = [
+  { id: 1, category: "订单", orderLevel: "母单", event: "拒单", level: "danger", icon: "!", title: "母单拒单", summary: "客户 A 的 000001.SZ 母单未通过 OMS 校验。", body: "该母单在进入后续处理前被拒绝，请根据拒单原因处理后再决定是否重新提交。", time: "10:21", unread: true, order: "P-ORD-DEMO-01", parentOrder: "P-ORD-DEMO-01", childOrder: "--", account: "DEMO-1001", client: "客户 A", mode: "HighTouch", rejectStage: "OMS 校验", rejectReason: "委托价格超出当前允许范围" },
+  { id: 2, category: "订单", orderLevel: "子单", event: "拒单", level: "danger", icon: "!", title: "子单拒单", summary: "客户 B 的 600000.SH 子单在柜台报送环节被拒绝。", body: "该子单报送柜台后被拒绝，请检查拒单原因、母单剩余可执行数量及后续路由处理。", time: "10:18", unread: true, order: "C-ORD-DEMO-02", parentOrder: "P-ORD-DEMO-02", childOrder: "C-ORD-DEMO-02", account: "DEMO-1002", client: "客户 B", mode: "LowTouch", rejectStage: "柜台报送", rejectReason: "柜台返回：申报数量不符合要求" },
+  { id: 3, category: "订单", orderLevel: "母单", event: "已提交", level: "success", icon: "✓", title: "母单提交成功", summary: "客户 A 的 000001.SZ 买入母单已提交。", body: "买入母单已成功提交，后续拆单和执行结果可在订单列表中查看。", time: "10:05", unread: true, order: "P-ORD-DEMO-03", parentOrder: "P-ORD-DEMO-03", childOrder: "--", account: "DEMO-1001", client: "客户 A", mode: "HighTouch" },
+  { id: 4, category: "订单", orderLevel: "子单", event: "已成交", level: "success", icon: "✓", title: "子单全部成交", summary: "客户 B 的 600000.SH 子单已全部成交。", body: "该子单已全部成交，成交结果已同步至对应母单、订单查询和成交查询。", time: "09:52", unread: false, order: "C-ORD-DEMO-04", parentOrder: "P-ORD-DEMO-04", childOrder: "C-ORD-DEMO-04", account: "DEMO-1002", client: "客户 B", mode: "LowTouch" },
+  { id: 5, category: "市场", market: "沪深", event: "休市提醒", level: "info", icon: "休", title: "沪深市场休市提醒", summary: "请关注下一休市日的交易与客户委托安排。", body: "沪深市场下一休市日全天暂停交易，请提前安排客户委托；实际日历以交易所发布为准。", time: "09:40", unread: true, closedAt: "下一休市日 全天", resumeAt: "下一交易日 09:30", timezone: "北京时间" },
+  { id: 6, category: "市场", market: "港股", event: "休市提醒", level: "info", icon: "休", title: "港股市场休市提醒", summary: "请关注下一休市日及恢复交易时间。", body: "港股市场下一休市日全天暂停交易，请提前安排客户委托；实际日历以交易所发布为准。", time: "09:35", unread: false, closedAt: "下一休市日 全天", resumeAt: "下一交易日 09:30", timezone: "北京时间" },
+  { id: 7, category: "市场", market: "美股", event: "休市提醒", level: "info", icon: "休", title: "美股市场休市提醒", summary: "请关注当地休市安排与时区差异。", body: "美股市场下一休市日全天暂停交易，请关注当地时区与夏令时变化；实际日历以交易所发布为准。", time: "09:30", unread: false, closedAt: "下一休市日 全天", resumeAt: "下一交易日 09:30", timezone: "市场当地时间" },
+  { id: 8, category: "风控", event: "预警", level: "warning", icon: "!", title: "账户可用购买力较低", summary: "当前可用购买力接近预警阈值，请关注账户资金。", body: "当前账户可用购买力已接近预警阈值。本消息仅用于提醒，不直接改变订单或账户状态。", time: "09:20", unread: false, order: "--", account: "DEMO-1001" },
+  { id: 9, category: "系统", event: "安全", level: "info", icon: "i", title: "新设备登录提醒", summary: "账号于 09:12 在新设备登录。", body: "检测到当前账号在新设备登录。如非本人操作，请及时联系系统管理员。", time: "09:12", unread: false, order: "--", account: "Trader Demo" },
+];
+
 let state = {
   view: "market",
   direction: "buy",
@@ -68,22 +80,37 @@ let state = {
   noApproval: false,
   manualOrder: false,
   selectedOrder: 0,
+  orderAttributeDraft: "",
+  orderAttributeFilter: "",
   modal: null,
   approvalTab: "待审批事项",
   selectedApproval: 0,
   dataTab: "资金管理",
   dataParty: "对客方",
+  executionMode: "成交单笔",
+  appliedExecutionMode: "成交单笔",
+  executionCustomDimensions: ["标的代码", "方向"],
+  appliedExecutionCustomDimensions: ["标的代码", "方向"],
   positionMode: "明细",
   positionMarket: "证券",
+  positionBoardFilter: "全部",
+  positionBoardApplied: "全部",
   dataRange: "今天",
   riskCategory: "全部规则",
   riskTab: "风控设置",
   configTab: "购买力账号",
+  notificationOpen: false,
+  notificationFilter: "全部",
+  notificationSubFilter: "全部",
+  selectedNotification: 1,
 };
 
 const mainNav = document.querySelector("#mainNav");
 const workspace = document.querySelector("#workspace");
 const toast = document.querySelector("#toast");
+const notificationBell = document.querySelector("#notificationBell");
+const notificationBadge = document.querySelector("#notificationBadge");
+const notificationLayer = document.querySelector("#notificationLayer");
 
 mainNav.innerHTML = navItems.map(([id, label, icon]) => `
   <button class="nav-item" data-view="${id}" type="button" title="${label}">
@@ -92,6 +119,27 @@ mainNav.innerHTML = navItems.map(([id, label, icon]) => `
 
 document.querySelectorAll(".nav-item").forEach((item) => {
   item.addEventListener("click", () => navigate(item.dataset.view));
+});
+
+notificationBell.addEventListener("click", (event) => {
+  event.stopPropagation();
+  state.notificationOpen = !state.notificationOpen;
+  renderNotificationCenter();
+});
+
+notificationLayer.addEventListener("click", event => event.stopPropagation());
+
+document.addEventListener("click", (event) => {
+  if (!state.notificationOpen || event.target.closest(".notification-center")) return;
+  state.notificationOpen = false;
+  renderNotificationCenter();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !state.notificationOpen) return;
+  state.notificationOpen = false;
+  renderNotificationCenter();
+  notificationBell.focus();
 });
 
 function navigate(view) {
@@ -108,6 +156,99 @@ function render() {
   const views = { market: marketView, orders: ordersView, lending: lendingView, data: dataView, risk: riskView, config: configView, approval: approvalView };
   workspace.innerHTML = views[state.view]() + modalView();
   bindInteractions();
+  renderNotificationCenter();
+}
+
+function visibleNotifications() {
+  let rows = state.notificationFilter === "全部"
+    ? notificationRows
+    : notificationRows.filter(item => item.category === state.notificationFilter);
+  if (state.notificationFilter === "订单" && state.notificationSubFilter !== "全部") {
+    rows = state.notificationSubFilter === "拒单"
+      ? rows.filter(item => item.event === "拒单")
+      : rows.filter(item => item.orderLevel === state.notificationSubFilter);
+  }
+  if (state.notificationFilter === "市场" && state.notificationSubFilter !== "全部") {
+    rows = rows.filter(item => item.market === state.notificationSubFilter);
+  }
+  return rows;
+}
+
+function notificationMeta(item) {
+  if (item.category === "订单") {
+    const rows = ["订单层级", item.orderLevel, "客户", item.client, "资金账号", item.account, "订单模式", item.mode, "母单号", item.parentOrder, "子单号", item.childOrder];
+    if (item.event === "拒单") rows.push("拒单环节", item.rejectStage, "拒单原因", item.rejectReason);
+    return rows;
+  }
+  if (item.category === "市场") return ["市场", item.market, "休市时间", item.closedAt, "恢复时间", item.resumeAt, "时区", item.timezone];
+  return ["资金账号", item.account, "相关订单", item.order];
+}
+
+function renderNotificationCenter() {
+  const unreadCount = notificationRows.filter(item => item.unread).length;
+  notificationBadge.textContent = unreadCount > 9 ? "9+" : unreadCount;
+  notificationBadge.classList.toggle("show", unreadCount > 0);
+  notificationBell.classList.toggle("active", state.notificationOpen);
+  notificationBell.setAttribute("aria-expanded", String(state.notificationOpen));
+  if (!state.notificationOpen) {
+    notificationLayer.innerHTML = "";
+    return;
+  }
+
+  const filters = ["全部", "订单", "市场", "风控", "系统"];
+  const visible = visibleNotifications();
+  const selected = state.selectedNotification == null
+    ? null
+    : visible.find(item => item.id === state.selectedNotification) || visible[0];
+  const categoryCount = category => category === "全部"
+    ? notificationRows.length
+    : notificationRows.filter(item => item.category === category).length;
+
+  notificationLayer.innerHTML = `<section class="notification-popover" role="dialog" aria-label="消息通知">
+    <header class="notification-head"><h2>消息通知 <span class="notification-total">${unreadCount} 条未读</span></h2><button id="markNotificationsRead" type="button">全部已读</button></header>
+    <div class="notification-filters">${filters.map(filter => `<button class="notification-filter ${filter === state.notificationFilter ? "active" : ""}" data-notification-filter="${filter}" type="button">${filter} ${categoryCount(filter)}</button>`).join("")}</div>
+    ${state.notificationFilter === "订单" ? `<div class="notification-subfilters">${[["全部", "全部订单"], ["母单", "母单"], ["子单", "子单"], ["拒单", "全部拒单"]].map(([value, label]) => `<button class="notification-subfilter ${value === state.notificationSubFilter ? "active" : ""}" data-notification-subfilter="${value}" type="button">${label}</button>`).join("")}</div>` : state.notificationFilter === "市场" ? `<div class="notification-subfilters">${[["全部", "全部市场"], ["沪深", "沪深"], ["港股", "港股"], ["美股", "美股"]].map(([value, label]) => `<button class="notification-subfilter ${value === state.notificationSubFilter ? "active" : ""}" data-notification-subfilter="${value}" type="button">${label}</button>`).join("")}</div>` : ""}
+    <div class="notification-list">${visible.length ? visible.map(item => `<button class="notification-item ${item.unread ? "unread" : ""} ${selected?.id === item.id ? "selected" : ""}" data-notification-id="${item.id}" type="button">
+      <span class="notification-icon ${item.level}">${item.icon}</span>
+      <span class="notification-copy"><span class="notification-title-row"><span class="notification-title">${item.title}</span><span class="notification-status">${item.category === "订单" ? `${item.orderLevel} · ${item.event}` : item.category === "市场" ? `${item.market} · ${item.event}` : item.event}</span></span><span class="notification-summary">${item.summary}</span></span>
+      <span class="notification-time">${item.time}</span>
+    </button>`).join("") : `<div class="notification-empty">当前分类暂无消息</div>`}</div>
+    ${selected ? `<footer class="notification-detail"><div class="notification-detail-head"><b>${selected.title}</b><span>今天 ${selected.time}</span></div><p>${selected.body}</p><div class="notification-meta">${notificationMeta(selected).map(value => `<span>${value ?? "--"}</span>`).join("")}</div><div class="notification-detail-actions"><button class="btn ghost" id="closeNotificationDetail" type="button">收起</button>${selected.category === "订单" ? `<button class="btn primary" id="openRelatedOrder" type="button">查看相关订单</button>` : ""}</div></footer>` : ""}
+  </section>`;
+
+  notificationLayer.querySelectorAll("[data-notification-filter]").forEach(button => button.addEventListener("click", () => {
+    state.notificationFilter = button.dataset.notificationFilter;
+    state.notificationSubFilter = "全部";
+    const nextVisible = visibleNotifications();
+    if (!nextVisible.some(item => item.id === state.selectedNotification)) state.selectedNotification = nextVisible[0]?.id || null;
+    renderNotificationCenter();
+  }));
+  notificationLayer.querySelectorAll("[data-notification-subfilter]").forEach(button => button.addEventListener("click", () => {
+    state.notificationSubFilter = button.dataset.notificationSubfilter;
+    const nextVisible = visibleNotifications();
+    if (!nextVisible.some(item => item.id === state.selectedNotification)) state.selectedNotification = nextVisible[0]?.id || null;
+    renderNotificationCenter();
+  }));
+  notificationLayer.querySelectorAll("[data-notification-id]").forEach(button => button.addEventListener("click", () => {
+    const message = notificationRows.find(item => item.id === Number(button.dataset.notificationId));
+    if (!message) return;
+    message.unread = false;
+    state.selectedNotification = message.id;
+    renderNotificationCenter();
+  }));
+  notificationLayer.querySelector("#markNotificationsRead")?.addEventListener("click", () => {
+    notificationRows.forEach(item => { item.unread = false; });
+    renderNotificationCenter();
+  });
+  notificationLayer.querySelector("#closeNotificationDetail")?.addEventListener("click", () => {
+    state.selectedNotification = null;
+    renderNotificationCenter();
+  });
+  notificationLayer.querySelector("#openRelatedOrder")?.addEventListener("click", () => {
+    state.notificationOpen = false;
+    navigate("orders");
+    notify("已定位至相关订单列表（原型）");
+  });
 }
 
 function marketView() {
@@ -198,19 +339,22 @@ function tradeSidePanel() {
 }
 
 function ordersView() {
+  const visibleRows = orderRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => !state.orderAttributeFilter || row[9] === state.orderAttributeFilter);
   return `<section class="view with-trade-panel orders-view">
     <div class="main-column">
       <section class="panel orders-panel">
         <div class="panel-title">委托列表</div>
         <div class="toolbar orders-toolbar">
           <select class="select-field"><option>交易对手名称</option></select><select class="select-field"><option>资金账号名称</option></select><select class="select-field"><option>标的代码</option></select><select class="select-field"><option>订单模式</option><option>ALL</option><option>HighTouch</option><option>LowTouch</option></select>
-          <select class="select-field"><option>订单状态</option></select><button class="btn ghost">展开⌄</button><span class="tiny-icon">♟</span><span class="tiny-icon">▣</span><button class="btn primary">筛选</button>
+          <select class="select-field"><option>订单状态</option></select><select class="select-field order-attribute-filter" id="orderAttributeFilter" aria-label="委托属性"><option value="" ${state.orderAttributeDraft === "" ? "selected" : ""}>委托属性</option><option value="手工委托" ${state.orderAttributeDraft === "手工委托" ? "selected" : ""}>手工委托</option></select><button class="btn ghost">展开⌄</button><span class="tiny-icon">♟</span><span class="tiny-icon">▣</span><button class="btn primary" data-order-filter>筛选</button>
           <div class="orders-actions"><button class="btn muted">撤单</button><button class="btn danger">全撤</button><button class="btn primary">批量下单</button></div>
         </div>
-        <div class="table-wrap"><table class="data-table"><colgroup><col style="width:45px"><col style="width:75px"><col style="width:90px"><col style="width:80px"><col style="width:80px"><col style="width:95px"><col style="width:145px"><col style="width:155px"><col style="width:110px"><col style="width:95px"><col style="width:85px"><col style="width:90px"></colgroup>
-          <thead><tr><th>序列</th><th>☐</th><th>操作</th><th>订单方向</th><th>订单状态</th><th>业务类型</th><th>资金账号名称</th><th>框架名称</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th></tr></thead>
-          <tbody>${orderRows.map((r, i) => `<tr data-order-row="${i}" class="${i===state.selectedOrder?"selected":""}"><td>${i + 1}</td><td class="center">□</td><td class="center">${orderActionButtons(r,i)}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
-        <div class="table-footer">第 1 / 9 页, 共 165 条 <select class="select-field" style="min-width:80px"><option>20条/页</option></select><span class="pager">|‹ ‹ › ›|</span></div>
+        <div class="table-wrap"><table class="data-table"><colgroup><col style="width:45px"><col style="width:75px"><col style="width:90px"><col style="width:80px"><col style="width:80px"><col style="width:95px"><col style="width:145px"><col style="width:155px"><col style="width:110px"><col style="width:95px"><col style="width:85px"><col style="width:90px"><col style="width:110px"></colgroup>
+          <thead><tr><th>序列</th><th>☐</th><th>操作</th><th>订单方向</th><th>订单状态</th><th>业务类型</th><th>资金账号名称</th><th>框架名称</th><th>标的代码</th><th>订单模式</th><th>价格</th><th>数量</th><th>委托属性</th></tr></thead>
+          <tbody>${visibleRows.length ? visibleRows.map(({ row: r, index }, i) => `<tr data-order-row="${index}" class="${index===state.selectedOrder?"selected":""}"><td>${i + 1}</td><td class="center">□</td><td class="center">${orderActionButtons(r,index)}</td><td class="${r[0] === "买入" ? "buy" : "sell"}">${r[0]}</td><td class="${r[1] === "待撤" ? "warning-cell" : r[1] === "待确认" ? "pending-cell" : ""}">${r[1]}</td>${r.slice(2).map(v => `<td>${v || "--"}</td>`).join("")}</tr>`).join("") : `<tr><td class="empty-order-result" colspan="13">暂无符合条件的委托</td></tr>`}</tbody></table></div>
+        <div class="table-footer">第 1 / 1 页, 共 ${visibleRows.length} 条 <select class="select-field" style="min-width:80px"><option>20条/页</option></select><span class="pager">|‹ ‹ › ›|</span></div>
       </section>
       <div class="split-panels">${executionPanel(state.selectedOrder)}${childOrderPanel(state.selectedOrder)}</div>
     </div>
@@ -295,7 +439,7 @@ function positionDetailPage() {
     "对冲": ["交易对手号", "交易对手名称", "客户名称", "客户名", "交易账户", "交易对手简称", "资金账户号", "资金账号", "资金账号名称", "框架名称", "证券代码", "证券名称", "合约代码", "合约名称", "上市状态", "对冲渠道", "对冲方资金账号", "可用数量", "持仓数量", "持仓均价", "最新价", "持仓市值", "期初数量", "日间开仓数量", "日间平仓数量", "交易冻结数量", "持仓类型", "业务类型"],
     "明细": ["客户名称", "客户名", "交易账户", "交易对手号", "交易对手名称", "交易对手简称", "资金账户号", "资金账号", "资金账号名称", "框架名称", "证券代码", "证券名称", "合约代码", "合约名称", "上市状态", "开仓日期", "开仓均价", "期初数量", "持仓数量", "初保比例", "期初汇率", "平仓盈亏", "开仓费率", "平仓费率", "单位待实现利率收益", "持仓类型", "业务类型"],
   };
-  function samplePosition(marketType, securityCode, securityName, contractCode, contractName, quantity, available, freeze, value, pnl) {
+  function samplePosition(marketType, securityCode, securityName, contractCode, contractName, quantity, available, freeze, value, pnl, board = null) {
     const common = {
       "客户名称": "演示客户01", "客户名": "演示客户01", "交易账户": "DEMO-TR01", "交易对手号": "DEMO-PTY01",
       "交易对手名称": "演示交易对手", "交易对手简称": "演示对手", "资金账户号": "DEMO-PA01", "资金账号": "DEMO-1001",
@@ -306,23 +450,31 @@ function positionDetailPage() {
     };
     return {
       marketType,
+      board,
       client: { ...common, "成本价": "10.10", "持仓盈亏": pnl, "持仓盈亏率": "5.94%", "日内开仓成交数量": "20,000", "日内平仓成交数量": "0" },
       hedge: { ...common, "对冲渠道": "DEMO-CHANNEL", "对冲方资金账号": "DEMO-HEDGE-01", "日间开仓数量": "20,000", "日间平仓数量": "0" },
       detail: { ...common, "开仓日期": "2026-10-22", "开仓均价": "10.20", "初保比例": "25.00%", "期初汇率": "1.000000", "平仓盈亏": "0.00", "开仓费率": "0.03%", "平仓费率": "0.03%", "单位待实现利率收益": "0.00" },
     };
   }
   const positionRows = [
-    samplePosition("证券", "000001.SZ", "演示证券A", "—", "—", "120,000", "110,000", "2,000", "1,296,000.00", "72,000.00"),
+    // Prototype-only explicit category fixtures; categories are not derived from symbol formatting.
+    samplePosition("证券", "000001.SZ", "演示证券A", "—", "—", "120,000", "110,000", "2,000", "1,296,000.00", "72,000.00", "主板"),
+    samplePosition("证券", "DEMO-STAR", "演示科创板证券", "—", "—", "8,000", "7,000", "0", "86,400.00", "6,400.00", "科创板"),
+    samplePosition("证券", "DEMO-GEM", "演示创业板证券", "—", "—", "8,000", "7,000", "0", "86,400.00", "6,400.00", "创业板"),
+    samplePosition("证券", "DEMO-HK", "演示港股证券", "—", "—", "8,000", "7,000", "0", "86,400.00", "6,400.00", "港股"),
+    samplePosition("证券", "DEMO-US", "演示美股证券", "—", "—", "8,000", "7,000", "0", "86,400.00", "6,400.00", "美股"),
     samplePosition("期货", "—", "—", "IF2612.CFE", "演示期货合约", "12", "10", "1", "1,296,000.00", "72,000.00"),
     samplePosition("债券", "110001.SH", "演示债券A", "—", "—", "6,000", "5,500", "100", "1,296,000.00", "72,000.00"),
   ];
   const selectedColumns = columnsByMode[state.positionMode] || columnsByMode["明细"];
   const modeKey = state.positionMode === "对客" ? "client" : state.positionMode === "对冲" ? "hedge" : "detail";
-  const selectedRows = positionRows.filter(row => row.marketType === state.positionMarket).map(row => selectedColumns.map(column => row[modeKey][column] ?? "—"));
+  const boardOptions = ["全部", "主板", "科创板", "创业板", "港股", "美股"].map(board => "<option value=\"" + board + "\"" + (state.positionBoardFilter === board ? " selected" : "") + ">" + board + "</option>").join("");
+  const boardFilter = state.positionMarket === "证券" ? "<label class=\"board-filter-field\">板块<select class=\"select-field board-filter\" data-position-board-filter>" + boardOptions + "</select></label>" : "";
+  const selectedRows = positionRows.filter(row => row.marketType === state.positionMarket && (state.positionMarket !== "证券" || state.positionBoardApplied === "全部" || row.board === state.positionBoardApplied)).map(row => selectedColumns.map(column => row[modeKey][column] ?? "—"));
   return `<div class="position-query-page">
     <div class="position-filters">
       <div class="toolbar compact data-filter"><input class="field" placeholder="客户名称"><input class="field" placeholder="客户名"><input class="field" placeholder="交易账户"><input class="field" placeholder="交易对手名称"><input class="field" placeholder="交易对手简称"></div>
-      <div class="toolbar compact data-filter"><input class="field" placeholder="资金账号"><input class="field" placeholder="资金账号名称"><input class="field" placeholder="证券代码 / 合约代码"><button class="btn primary" data-data-query>查询</button><button class="btn ghost" data-data-export>导出</button></div>
+      <div class="toolbar compact data-filter"><input class="field" placeholder="资金账号"><input class="field" placeholder="资金账号名称"><input class="field" placeholder="证券代码 / 合约代码">${boardFilter}<button class="btn primary" data-data-query>查询</button><button class="btn ghost" data-data-export>导出</button></div>
     </div>
     <div class="position-controls"><div class="position-market-tabs" role="group" aria-label="市场类别">${["证券", "期货", "债券"].map(x=>`<button class="${state.positionMarket===x?"active":""}" type="button" data-position-market="${x}" aria-pressed="${state.positionMarket===x}">${x}</button>`).join("")}</div><div class="position-mode-switch" role="radiogroup" aria-label="持仓类型">${["对客", "对冲", "明细"].map(x=>`<button type="button" role="radio" aria-checked="${state.positionMode===x}" data-position-mode="${x}" class="position-mode ${state.positionMode===x?"active":""}"><span class="radio-dot"></span>${x}</button>`).join("")}</div></div>
     ${tablePage(selectedColumns, selectedRows)}
@@ -340,10 +492,45 @@ function marginRatePage() {
 }
 
 function executionQueryPage() {
-  const rows = [["2026-10-10", "EXEC-DEMO-001", "DEMO-1001", "演示资金账号01", "DEMO-FRAME", "000001.SZ", "平安银行", "买入", "开仓", "10.78", "2,000", "21,560.00", "深交所", "10:18:32", "QFII-DEMO"], ["2026-10-09", "EXEC-DEMO-002", "DEMO-1002", "演示资金账号02", "DEMO-FRAME", "600000.SH", "浦发银行", "卖出", "平仓", "9.52", "5,000", "47,600.00", "上交所", "14:31:08", "CHANNEL-B"]];
-  return `${historyToolbar(["资金账号", "标的代码", "委托方向", "交易所", "对冲渠道"])}<div class="dimension-bar"><span>查询维度</span>${["成交单笔","证券代码+委托方向","证券代码+委托方向+日期","自定义维度"].map((x,i)=>`<button class="dimension-btn ${i===0?"active":""}">${x}</button>`).join("")}</div>${tablePage(["日期","成交编号","资金账号","资金账号名称","框架名称","证券代码","证券名称","委托方向","开平标识","成交价格","成交数量","成交金额","交易所","成交时间","对冲渠道"], rows, "合计　成交数量 7,000　成交金额 69,160.00")}`;
+  const records = [
+    { date: "2026-10-10", executionId: "EXEC-DEMO-001", tradingAccount: "DEMO-TR01", fundAccount: "DEMO-1001", accountName: "演示资金账号01", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.78, quantity: 2000, amount: 21560, exchange: "深交所", time: "10:18:32", channel: "QFII-DEMO" },
+    { date: "2026-10-10", executionId: "EXEC-DEMO-003", tradingAccount: "DEMO-TR01", fundAccount: "DEMO-1001", accountName: "演示资金账号01", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.70, quantity: 1000, amount: 10700, exchange: "深交所", time: "10:20:06", channel: "QFII-DEMO" },
+    { date: "2026-10-09", executionId: "EXEC-DEMO-004", tradingAccount: "DEMO-TR02", fundAccount: "DEMO-1002", accountName: "演示资金账号02", frame: "DEMO-FRAME", code: "000001.SZ", name: "平安银行", side: "买入", position: "开仓", price: 10.76, quantity: 500, amount: 5380, exchange: "深交所", time: "14:31:08", channel: "CHANNEL-B" },
+    { date: "2026-10-09", executionId: "EXEC-DEMO-002", tradingAccount: "DEMO-TR02", fundAccount: "DEMO-1002", accountName: "演示资金账号02", frame: "DEMO-FRAME", code: "600000.SH", name: "浦发银行", side: "卖出", position: "平仓", price: 9.52, quantity: 5000, amount: 47600, exchange: "上交所", time: "14:35:22", channel: "CHANNEL-B" },
+  ];
+  const modes = ["成交单笔", "证券代码+委托方向", "证券代码+委托方向+日期", "自定义维度"];
+  const customDimensions = ["日期", "交易账户", "标的代码", "方向", "对冲渠道"];
+  const dimensionFields = { "日期": "date", "交易账户": "tradingAccount", "标的代码": "code", "方向": "side", "对冲渠道": "channel" };
+  const mode = state.appliedExecutionMode;
+  const dimensions = mode === "证券代码+委托方向" ? ["标的代码", "方向"] : mode === "证券代码+委托方向+日期" ? ["标的代码", "方向", "日期"] : mode === "自定义维度" ? state.appliedExecutionCustomDimensions : [];
+  const groups = new Map();
+  records.forEach((record, index) => {
+    const key = mode === "成交单笔" ? `single-${index}` : dimensions.map(name => record[dimensionFields[name]]).join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(record);
+  });
+  const uniqueValue = (group, field) => {
+    const values = [...new Set(group.map(record => record[field]))];
+    return values.length === 1 ? values[0] : "--";
+  };
+  const rows = [...groups.values()].map(group => {
+    const quantityComplete = group.every(record => Number.isFinite(record.quantity));
+    const amountComplete = group.every(record => Number.isFinite(record.amount));
+    const totalQuantity = quantityComplete ? group.reduce((sum, record) => sum + record.quantity, 0) : null;
+    const totalAmount = amountComplete ? group.reduce((sum, record) => sum + record.amount, 0) : null;
+    const isSummary = mode !== "成交单笔";
+    const sameSecurity = new Set(group.map(record => record.code)).size === 1;
+    const price = !isSummary ? group[0].price.toFixed(2) : sameSecurity && quantityComplete && amountComplete && totalQuantity > 0 ? (totalAmount / totalQuantity).toFixed(2) : "--";
+    const quantityValue = quantityComplete ? totalQuantity.toLocaleString("en-US") : "--";
+    const amountValue = amountComplete ? totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
+    return [uniqueValue(group, "date"), isSummary ? "--" : group[0].executionId, uniqueValue(group, "tradingAccount"), uniqueValue(group, "fundAccount"), uniqueValue(group, "accountName"), uniqueValue(group, "frame"), uniqueValue(group, "code"), uniqueValue(group, "name"), uniqueValue(group, "side"), uniqueValue(group, "position"), price, quantityValue, amountValue, uniqueValue(group, "exchange"), isSummary ? "--" : group[0].time, uniqueValue(group, "channel")];
+  });
+  const totalQuantity = records.reduce((sum, record) => sum + record.quantity, 0);
+  const totalAmount = records.reduce((sum, record) => sum + record.amount, 0);
+  const modeControls = modes.map(name => `<button class="dimension-btn ${name === state.executionMode ? "active" : ""}" type="button" data-execution-mode="${name}" aria-pressed="${name === state.executionMode}">${name}</button>`).join("");
+  const dimensionControls = state.executionMode === "自定义维度" ? `<div class="dimension-options"><span>自定义维度</span>${customDimensions.map(name => `<button class="dimension-btn ${state.executionCustomDimensions.includes(name) ? "active" : ""}" type="button" data-execution-dimension="${name}" aria-pressed="${state.executionCustomDimensions.includes(name)}">${name}</button>`).join("")}</div>` : "";
+  return `${historyToolbar(["资金账号", "标的代码", "委托方向", "交易所", "对冲渠道"])}<div class="dimension-bar"><span>查询维度</span>${modeControls}</div>${dimensionControls}<div class="query-hint">汇总口径：数量、金额分别求和；同一标的且数量合计大于零时，成交均价 = 成交金额合计 ÷ 成交数量合计。汇总行不展示单笔成交编号和时间。</div>${tablePage(["日期","成交编号","交易账户","资金账号","资金账号名称","框架名称","证券代码","证券名称","委托方向","开平标识","成交价格","成交数量","成交金额","交易所","成交时间","对冲渠道"], rows, `合计　成交数量 ${totalQuantity.toLocaleString("en-US")}　成交金额 ${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)}`;
 }
-
 function hedgePositionPage() {
   const cards = [["可用资金","8,126,400.00"],["冻结资金","480,000.00"],["期初资金","8,500,000.00"],["持仓市值","2,057,600.00"]];
   const rows = [["QFII-DEMO", "HEDGE-DEMO01", "000001.SZ", "平安银行", "已上市", "多头", "8,000", "120,000", "10,000", "5,000", "10.62", "117,000", "125,000", "1,350,000.00"], ["CHANNEL-B", "HEDGE-DEMO02", "600000.SH", "浦发银行", "已上市", "多头", "3,000", "80,000", "0", "2,000", "9.38", "75,000", "77,000", "733,040.00"]];
@@ -483,8 +670,24 @@ function bindInteractions() {
   document.querySelectorAll("[data-data-party]").forEach(btn => btn.addEventListener("click", () => { state.dataParty=btn.dataset.dataParty; render(); }));
   document.querySelectorAll("[data-position-mode]").forEach(btn => btn.addEventListener("click", () => { state.positionMode=btn.dataset.positionMode; render(); }));
   document.querySelectorAll("[data-position-market]").forEach(btn => btn.addEventListener("click", () => { state.positionMarket=btn.dataset.positionMarket; render(); }));
+  document.querySelectorAll("[data-position-board-filter]").forEach(select => select.addEventListener("change", () => { state.positionBoardFilter = select.value; }));
   document.querySelectorAll("[data-date-range]").forEach(btn => btn.addEventListener("click", () => { state.dataRange=btn.dataset.dateRange; render(); }));
-  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}查询条件已应用（原型）`)));
+  document.querySelectorAll("[data-execution-mode]").forEach(btn => btn.addEventListener("click", () => { state.executionMode=btn.dataset.executionMode; render(); }));
+  document.querySelectorAll("[data-execution-dimension]").forEach(btn => btn.addEventListener("click", () => { const name=btn.dataset.executionDimension; state.executionCustomDimensions=state.executionCustomDimensions.includes(name)?state.executionCustomDimensions.filter(item=>item!==name):[...state.executionCustomDimensions,name]; render(); }));
+  document.querySelectorAll("[data-data-query]").forEach(btn => btn.addEventListener("click", () => {
+    if (state.dataTab === "成交查询") {
+      state.appliedExecutionMode=state.executionMode;
+      state.appliedExecutionCustomDimensions=[...state.executionCustomDimensions];
+      render();
+    }
+    if (state.dataTab === "持仓信息") {
+      const filterValues = [...document.querySelectorAll(".position-filters input")].map(input => input.value);
+      state.positionBoardApplied = state.positionBoardFilter;
+      render();
+      document.querySelectorAll(".position-filters input").forEach((input, index) => { input.value = filterValues[index] ?? ""; });
+    }
+    notify(`4{state.dataTab}查询条件已应用（原型）`);
+  }));
   document.querySelectorAll("[data-data-export]").forEach(btn => btn.addEventListener("click", () => notify(`${state.dataTab}当前结果已生成演示导出`)));
   document.querySelectorAll("[data-trade-type]").forEach(btn => btn.addEventListener("click", () => { state.tradeType = btn.dataset.tradeType; render(); }));
   document.querySelectorAll("[data-direction]").forEach(btn => btn.addEventListener("click", () => { state.direction = btn.dataset.direction; render(); }));
@@ -516,6 +719,14 @@ function bindInteractions() {
   document.querySelector("#rejectApproval")?.addEventListener("click", () => { approvalRows[state.selectedApproval][5]="审批拒绝"; state.approvalTab="已审批事项"; render(); notify("审批已拒绝并保留审批记录"); });
   document.querySelector("#approvalDetail")?.addEventListener("click", () => notify("已展示委托详情、审批节点及审批前后数据（原型）"));
   document.querySelectorAll("[data-order-row]").forEach(row => row.addEventListener("click", () => { state.selectedOrder=Number(row.dataset.orderRow); render(); }));
+  document.querySelector("#orderAttributeFilter")?.addEventListener("change", event => { state.orderAttributeDraft=event.target.value; });
+  document.querySelector("[data-order-filter]")?.addEventListener("click", () => {
+    state.orderAttributeFilter=state.orderAttributeDraft;
+    const matchingIndexes=orderRows.map((row,index)=>({row,index})).filter(({row})=>!state.orderAttributeFilter||row[9]===state.orderAttributeFilter).map(({index})=>index);
+    if (!matchingIndexes.includes(state.selectedOrder)) state.selectedOrder=matchingIndexes[0] ?? -1;
+    render();
+    notify(`筛选完成，共 ${matchingIndexes.length} 条委托`);
+  });
   document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); const index=Number(btn.dataset.approveOrder); orderRows[index][1] = "已确认"; state.selectedOrder=index; render(); notify("订单已确认，可选择直接下单或拆单"); }));
   document.querySelectorAll("[data-direct-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"direct-order",index:Number(btn.dataset.directOrder)}; render(); }));
   document.querySelectorAll("[data-split-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"split-order",index:Number(btn.dataset.splitOrder)}; render(); }));
@@ -532,7 +743,7 @@ function bindInteractions() {
   document.querySelector("#saveExecution")?.addEventListener("click", () => { const index=state.modal.index; tradeExecutions[index] ||= []; tradeExecutions[index].push([orderRows[index][5],`EXEC-${index+1}${tradeExecutions[index].length+1}`,document.querySelector("#executionPrice").value,Number(document.querySelector("#executionQty").value).toLocaleString(),"手工成交"]); state.modal=null; render(); notify("手工成交已保存并汇总至母单（原型）"); });
   document.querySelector("#resetOrder")?.addEventListener("click", () => { state.price = 10.80; state.quantity = 0; state.noApproval=false; state.manualOrder=false; render(); notify("下单信息已重置"); });
   document.querySelector("#submitOrder")?.addEventListener("click", () => { state.modal={type:"order-confirm"}; render(); });
-  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString()]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
+  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString(),""]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
 }
 
 let toastTimer;
@@ -544,3 +755,4 @@ function notify(message) {
 }
 
 render();
+
