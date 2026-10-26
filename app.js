@@ -366,12 +366,16 @@ function executionQueryPage() {
     return values.length === 1 ? values[0] : "--";
   };
   const rows = [...groups.values()].map(group => {
-    const totalQuantity = group.reduce((sum, record) => sum + record.quantity, 0);
-    const totalAmount = group.reduce((sum, record) => sum + record.amount, 0);
+    const quantityComplete = group.every(record => Number.isFinite(record.quantity));
+    const amountComplete = group.every(record => Number.isFinite(record.amount));
+    const totalQuantity = quantityComplete ? group.reduce((sum, record) => sum + record.quantity, 0) : null;
+    const totalAmount = amountComplete ? group.reduce((sum, record) => sum + record.amount, 0) : null;
     const isSummary = mode !== "成交单笔";
     const sameSecurity = new Set(group.map(record => record.code)).size === 1;
-    const price = !isSummary ? group[0].price.toFixed(2) : sameSecurity && totalQuantity > 0 && group.every(record => Number.isFinite(record.amount) && Number.isFinite(record.quantity)) ? (totalAmount / totalQuantity).toFixed(2) : "--";
-    return [uniqueValue(group, "date"), isSummary ? "--" : group[0].executionId, uniqueValue(group, "tradingAccount"), uniqueValue(group, "fundAccount"), uniqueValue(group, "accountName"), uniqueValue(group, "frame"), uniqueValue(group, "code"), uniqueValue(group, "name"), uniqueValue(group, "side"), uniqueValue(group, "position"), price, totalQuantity.toLocaleString("en-US"), totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), uniqueValue(group, "exchange"), isSummary ? "--" : group[0].time, uniqueValue(group, "channel")];
+    const price = !isSummary ? group[0].price.toFixed(2) : sameSecurity && quantityComplete && amountComplete && totalQuantity > 0 ? (totalAmount / totalQuantity).toFixed(2) : "--";
+    const quantityValue = quantityComplete ? totalQuantity.toLocaleString("en-US") : "--";
+    const amountValue = amountComplete ? totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "--";
+    return [uniqueValue(group, "date"), isSummary ? "--" : group[0].executionId, uniqueValue(group, "tradingAccount"), uniqueValue(group, "fundAccount"), uniqueValue(group, "accountName"), uniqueValue(group, "frame"), uniqueValue(group, "code"), uniqueValue(group, "name"), uniqueValue(group, "side"), uniqueValue(group, "position"), price, quantityValue, amountValue, uniqueValue(group, "exchange"), isSummary ? "--" : group[0].time, uniqueValue(group, "channel")];
   });
   const totalQuantity = records.reduce((sum, record) => sum + record.quantity, 0);
   const totalAmount = records.reduce((sum, record) => sum + record.amount, 0);
