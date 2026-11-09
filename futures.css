@@ -1,0 +1,261 @@
+.brand-mark { border-radius: 3px; background: #155887; box-shadow: none; font-family: Arial, sans-serif; font-size: 16px; margin-right: 14px; }
+.trading-workspace { height: 100%; display: flex; flex-direction: column; min-width: 0; }
+.trading-market-tabs { flex: none; height: 35px; margin-bottom: 7px; padding-right: 12px; border-bottom: 1px solid #ccd3da; background: #fff; }
+.prototype-label { color: #929aa2; font-size: 11px; }
+.trading-workspace > .view { flex: 1; min-height: 0; }
+.view.futures-workspace { grid-template-columns: minmax(0, 1fr) 364px; gap: 8px; padding: 0; }
+.futures-workspace button, .future-modal button { transition: background .12s, color .12s; }
+.futures-workspace button:focus-visible, .future-modal button:focus-visible { outline: 2px solid #287ce8; outline-offset: 2px; }
+.futures-main { gap: 8px; }
+.future-orders { flex: 1.35; min-height: 235px; display: flex; flex-direction: column; overflow: hidden; }
+.future-holdings { flex: 1; min-height: 170px; display: flex; flex-direction: column; overflow: hidden; }
+.future-panel-tabs { display: flex; align-items: center; gap: 3px; min-height: 37px; padding: 0 8px; border-bottom: 1px solid #cfd5dc; }
+.future-panel-tabs > button:not(.future-text-button) { border: 0; background: transparent; color: #67717d; padding: 10px 13px; height: 37px; position: relative; white-space: nowrap; }
+.future-panel-tabs > button.active { color: #176cc9; font-weight: 600; }
+.future-panel-tabs > button.active::after { position: absolute; bottom: 0; left: 12px; right: 12px; height: 2px; content: ""; background: #287ce8; }
+.future-filters { display: flex; align-items: flex-end; gap: 9px; padding: 12px 12px 9px; flex-wrap: wrap; }
+.future-filters label { color: #77828d; font-size: 12px; display: flex; flex-direction: column; gap: 5px; }
+.future-filters select { width: 145px; border: 1px solid #cdd3da; height: 29px; background: #fff; border-radius: 3px; padding: 0 8px; color: #343e49; }
+.future-filters label:first-child select { width: 165px; }
+.future-filters .btn { height: 29px; min-width: 59px; }
+.future-day { font-size: 11px; color: #7f8992; align-self: center; white-space: nowrap; }
+.future-day b { color: #505c68; font-weight: 500; margin-left: 5px; }
+.future-text-button { border: 0; background: transparent; color: #5785b0; font-size: 12px; padding: 3px 5px; }
+.future-text-button:hover { color: #166bc4; background: #eff5fc; }
+.future-list-tools { min-height: 35px; display: flex; align-items: center; padding: 0 12px 7px; gap: 10px; color: #929aa4; font-size: 11px; }
+.future-list-tools .btn { height: 25px; min-width: 62px; padding: 0 13px; }
+.future-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.future-order-table { min-width: 1410px; }
+.future-order-table th:nth-child(1) { width: 42px; }
+.future-order-table th:nth-child(2) { width: 53px; }
+.future-order-table th:nth-child(3) { width: 113px; }
+.future-order-table th:nth-child(4), .future-order-table th:nth-child(5) { width: 76px; }
+.future-order-table th:nth-child(6) { width: 83px; }
+.future-order-table th:nth-child(7) { width: 90px; }
+.future-order-table th:nth-child(8), .future-order-table th:nth-child(9) { width: 76px; }
+.future-order-table th:nth-child(10) { width: 94px; }
+.future-order-table th:nth-child(11) { width: 80px; }
+.future-order-table th:nth-child(12) { width: 90px; }
+.future-order-table th:nth-child(13) { width: 155px; }
+.future-order-table th:nth-child(14) { width: 110px; }
+.futures-workspace .data-table th { height: 34px; background: #f4f5f8; color: #6d7783; border-color: #e1e5e9; font-size: 11px; }
+.futures-workspace .data-table td { height: 37px; color: #3c4853; font-size: 12px; border-bottom: 1px solid #edf0f3; }
+.futures-workspace .data-table tbody tr:nth-child(odd) { background: #fff; }
+.futures-workspace .data-table tbody tr:nth-child(even) { background: #f7f8fa; }
+.futures-workspace .data-table tbody tr.selected { background: #e7f0ff; }
+.futures-workspace .data-table .buy { color: #e45e35; }
+.futures-workspace .data-table .sell { color: #189488; }
+.futures-workspace .data-table .available-cell { color: #176cc9; font-weight: 600; }
+.offset-pill { padding: 2px 7px; border-radius: 3px; font-size: 11px; }
+.offset-pill.opening { color: #916c2f; background: #faf1e2; }
+.offset-pill.closing { color: #547caa; background: #edf3fa; }
+.future-status { display: inline-flex; align-items: center; gap: 6px; color: #3c7bd0; }
+.future-status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.future-status.filled { color: #50968d; }
+.future-status.cancelled { color: #979fa6; }
+.future-table-footer { min-height: 33px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; border-top: 1px solid #e6e9ed; color: #9098a1; font-size: 11px; }
+.future-position-context { display: flex; gap: 18px; align-items: center; padding: 10px 12px; color: #858e97; font-size: 11px; flex: none; }
+.future-position-scroll { flex: 1; overflow: auto; }
+.future-position-table { min-width: 1030px; }
+.future-position-table th { width: 83px; }
+.future-position-table th:first-child { width: 120px; }
+.future-position-table th:last-child { width: 125px; }
+.future-position-table.full { min-width: 1220px; }
+.future-combination-table { min-width: 950px; }
+.future-combination-table th:nth-child(3) { width: 210px; }
+.future-empty { color: #a0a8b0; font-size: 12px; text-align: center; padding: 65px 10px; }
+.futures-side { gap: 8px; }
+.future-quote { padding: 10px 13px 9px; flex: none; }
+.future-quote-heading { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #55616d; }
+.future-market-label { background: #f2f4f7; color: #85919b; font-size: 10px; padding: 3px 7px; border-radius: 3px; }
+.future-symbol { display: flex; align-items: baseline; gap: 9px; padding-top: 8px; }
+.future-symbol strong { font-size: 14px; font-weight: 600; }
+.future-symbol > span { color: #8b949d; font-size: 11px; }
+.future-price-row { display: flex; align-items: baseline; gap: 10px; padding-top: 5px; font-variant-numeric: tabular-nums; }
+.future-price-row > b { font-family: Arial, sans-serif; font-size: 25px; color: #df5a3d; font-weight: 600; }
+.future-price-row > span { color: #d86a52; font-size: 11px; }
+.future-price-row > small { font-size: 10px; margin-left: auto; color: #9ca5ad; }
+.future-quote-meta { display: flex; justify-content: space-between; padding: 6px 0 8px; font-size: 10px; color: #98a0a7; }
+.future-quote-meta b { font-weight: 400; color: #6e7983; margin-left: 2px; }
+.future-book { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.future-book-head, .future-book button { display: grid; grid-template-columns: 28px 1fr 45px; align-items: center; width: 100%; }
+.future-book-head { font-size: 10px; color: #94a0aa; padding-bottom: 4px; }
+.future-book-head span:nth-child(n+2) { text-align: right; }
+.future-book button { height: 19px; font-size: 10px; border: 0; background: transparent; padding: 0 1px; }
+.future-book button b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.future-book button span:last-child { text-align: right; color: #79838d; }
+.future-book button span:first-child { color: #9ca6af; text-align: left; }
+.future-book .buy button { color: #d66b4a; }
+.future-book .sell button { color: #159e90; }
+.future-book .buy button:hover { background: #fff1eb; }
+.future-book .sell button:hover { background: #e6f6f2; }
+.future-ticket { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.future-ticket-header { height: 34px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-bottom: 1px solid #e6e9ed; color: #58646f; font-size: 12px; }
+.future-ticket-header .future-text-button { font-size: 17px; }
+.future-type-tabs { height: 34px; display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #e3e7eb; margin: 0 12px; flex: none; }
+.future-type-tabs button { position: relative; border: 0; color: #8a929a; font-size: 11px; background: transparent; }
+.future-type-tabs button.active { color: #1f70c3; }
+.future-type-tabs button.active::after { content: ""; position: absolute; height: 2px; bottom: 0; left: 24px; right: 24px; background: #287ce8; }
+.future-ticket-scroll { overflow: auto; flex: 1; min-height: 0; padding: 0 13px 7px; scrollbar-width: thin; }
+.future-ticket-context { height: 31px; display: flex; align-items: center; justify-content: space-between; color: #969fa8; font-size: 10px; }
+.future-ticket-context b { color: #6d7984; font-weight: 500; }
+.future-field { display: flex; align-items: center; gap: 7px; min-width: 0; margin-bottom: 7px; }
+.future-field > span { width: 63px; flex: none; font-size: 11px; color: #7f8994; }
+.future-field > input, .future-field select { min-width: 0; width: 100%; border: 1px solid #d1d8df; background: #fff; border-radius: 3px; height: 29px; padding: 0 6px; color: #3d4854; font-size: 11px; outline: none; }
+.future-field > input:focus, .future-field select:focus, .future-stepper:focus-within { border-color: #629ad7; box-shadow: 0 0 0 2px #edf4ff; }
+.future-two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.future-two-fields .future-field { gap: 5px; }
+.future-two-fields .future-field > span { width: 48px; font-size: 10px; }
+.future-two-fields .future-field select { font-size: 10px; padding-left: 4px; }
+.future-direction-row { margin-top: 3px; }
+.future-directions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; }
+.future-directions button { height: 31px; border-radius: 3px; font-size: 12px; border: 1px solid #dde2e7; background: #fff; color: #7d8792; }
+.future-directions .buy.active { border-color: #ed805c; background: #fff0e9; color: #e05e35; font-weight: 600; }
+.future-directions .sell.active { border-color: #59b7a9; background: #e9f7f3; color: #149a88; font-weight: 600; }
+.future-available-strip { height: 29px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px; margin: 1px 0 9px 70px; background: #f5f8fb; border-radius: 3px; font-size: 10px; color: #919ba5; }
+.future-available-strip b { color: #526d86; font-size: 12px; margin-left: 2px; font-weight: 600; }
+.future-stepper { min-width: 0; width: 100%; height: 29px; display: grid; grid-template-columns: 29px 1fr 29px; border: 1px solid #d1d8df; border-radius: 3px; }
+.future-stepper button { font-size: 15px; background: #fff; color: #8a96a1; border: 0; border-radius: 3px; }
+.future-stepper button:hover { background: #f0f4f8; }
+.future-stepper input { min-width: 0; width: 100%; border: 0; background: transparent; text-align: center; color: #394c5d; font-size: 13px; font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; }
+.future-stepper input::-webkit-inner-spin-button, .future-stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.future-available { display: flex; justify-content: space-between; margin: -1px 0 6px 70px; font-size: 10px; color: #98a1aa; }
+.future-available b { font-size: 12px; color: #4e7eae; font-weight: 600; }
+.future-fractions { margin: 0 0 8px 70px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.future-fractions button { border: 1px solid #d5e3f5; border-radius: 3px; height: 24px; background: #f5f9ff; color: #5981af; font-size: 10px; }
+.future-fractions button:hover { color: white; background: #5188d2; border-color: #5188d2; }
+.future-ticket-options { display: flex; align-items: center; justify-content: space-between; height: 24px; margin-left: 70px; font-size: 10px; color: #7e8993; }
+.future-ticket-options label { display: flex; gap: 5px; align-items: center; }
+.future-ticket-options input, .future-inline-check input, .future-keep-grid input { accent-color: #287ce8; margin: 0; }
+.future-extra { padding-top: 7px; }
+.future-inline-check { display: flex; align-items: center; gap: 5px; margin: 1px 0 10px 70px; font-size: 11px; color: #7e8993; }
+.future-money { display: flex; justify-content: space-between; color: #8a96a0; font-size: 10px; margin-top: 5px; padding: 7px 0 2px; border-top: 1px solid #edf0f3; }
+.future-money b { color: #657a8d; font-weight: 500; font-size: 11px; }
+.future-ticket-footer { flex: none; display: flex; align-items: center; gap: 8px; padding: 9px 13px 11px; border-top: 1px solid #e7ebef; background: #fff; }
+.future-reset { flex: none; width: 27px; height: 34px; border: 0; color: #97a1aa; background: transparent; font-size: 21px; }
+.future-submit { width: 100%; border: 0; height: 37px; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 500; }
+.future-submit span { font-size: 11px; padding-left: 15px; opacity: .8; }
+.future-submit.buy { background: #ed713e; }
+.future-submit.sell { background: #1aa692; }
+.future-submit:hover { filter: brightness(.96); }
+.future-error { color: #c8533b; font-size: 11px; background: #fff2ed; padding: 7px 9px; border-radius: 3px; margin-bottom: 5px; }
+.future-leg-list { margin: 10px 0 16px; border: 1px solid #e1e7ed; border-radius: 4px; }
+.future-leg { display: flex; align-items: center; gap: 9px; padding: 10px; }
+.future-leg + .future-leg { border-top: 1px solid #edf0f3; }
+.future-leg-id { display: grid; place-items: center; width: 22px; height: 23px; border-radius: 3px; color: #608bb6; background: #edf4fc; font-size: 11px; }
+.future-leg > div { flex: 1; }
+.future-leg b { font-size: 11px; font-weight: 500; display: block; }
+.future-leg small { display: block; font-size: 10px; color: #929da7; margin-top: 4px; }
+.future-leg select { width: 65px; height: 27px; border: 1px solid #d2d9e0; background: #fff; border-radius: 3px; font-size: 11px; }
+.future-modal { z-index: 60; }
+.future-modal .dialog { width: 540px; border-radius: 6px; }
+.future-modal h3 { font-size: 14px; font-weight: 500; }
+.future-confirm-info { display: grid; grid-template-columns: 94px 1fr 80px 1fr; gap: 16px 10px; margin: 0 0 22px; font-size: 12px; }
+.future-confirm-info dt { color: #909aa4; }
+.future-confirm-info dd { margin: 0; color: #425362; overflow-wrap: anywhere; }
+.future-plan th, .future-plan td { font-size: 12px; height: 33px; padding: 5px; }
+.future-settings-label { font-size: 12px; color: #7d8995; margin: 0 0 21px; }
+.future-keep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 12px; padding-bottom: 8px; }
+.future-keep-grid label { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #53616f; }
+.future-position-query { display: flex; align-items: center; }
+.future-position-query .field, .future-position-query > select { width: 160px; flex: none; }
+.future-position-query .future-field { margin: 0; width: 205px; }
+.future-position-query > select { height: 29px; border: 1px solid #ccd3da; background: #fff; }
+@media (max-width: 1280px) {
+  .view.futures-workspace { grid-template-columns: minmax(0, 1fr) 340px; }
+  .future-day { display: none; }
+  .future-filters { gap: 7px; }
+  .future-filters select { width: 118px; }
+  .future-filters label:first-child select { width: 140px; }
+}
+@media (max-height: 850px) {
+  .future-quote { padding-top: 8px; padding-bottom: 7px; }
+  .future-book button { height: 17px; }
+  .future-symbol { padding-top: 5px; }
+  .future-ticket-context { height: 25px; }
+  .future-field { margin-bottom: 5px; }
+  .future-ticket-header { height: 30px; }
+  .future-type-tabs { height: 30px; }
+}
+
+/* Local order-entry refinements within the existing Trader workspace. */
+.local-ticket .future-ticket-scroll { padding-top: 0; }
+.local-ticket .future-field { margin-bottom: 8px; }
+.local-ticket .future-field > span { font-size: 12px; color: #7b858f; }
+.local-ticket .future-field select { font-size: 12px; height: 30px; }
+.local-ticket .future-two-fields .future-field > span { font-size: 11px; }
+.local-ticket .future-two-fields .future-field select { font-size: 11px; }
+.future-local-entry { padding: 10px 0 1px; margin: 2px 0 9px; border-top: 1px solid #edf0f3; border-bottom: 1px solid #edf0f3; }
+.local-ticket .future-direction-row { margin-top: 0; }
+.local-ticket .future-directions { gap: 0; }
+.local-ticket .future-directions button { border-radius: 0 3px 3px 0; height: 30px; }
+.local-ticket .future-directions button:first-child { border-radius: 3px 0 0 3px; }
+.local-ticket .future-directions button + button { margin-left: -1px; }
+.local-ticket .future-directions .active { position: relative; }
+.future-offsets { display: grid; min-width: 0; width: 100%; }
+.future-offsets.count-2 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.future-offsets.count-4 { grid-template-columns: minmax(100px,1.9fr) repeat(3,minmax(0,1fr)); }
+.future-offsets button { height: 30px; border: 1px solid #d7dde4; border-right-width: 0; color: #707c88; background: #fff; font-size: 12px; }
+.future-offsets button:first-child { border-radius: 3px 0 0 3px; }
+.future-offsets button:last-child { border-right-width: 1px; border-radius: 0 3px 3px 0; }
+.future-offsets button.active { background: #edf4ff; color: #206ccd; border-color: #8bb2e5; box-shadow: inset -1px 0 #8bb2e5; font-weight: 600; }
+.future-offsets button:hover { background: #f1f6fc; }
+.future-offsets.count-4 button:first-child { font-size: 10px; }
+.future-offset-hint { text-align: right; font-size: 10px; color: #8192a5; margin: -4px 0 6px; }
+.local-ticket .future-stepper { height: 30px; }
+.local-ticket .future-available { margin-top: 0; font-size: 11px; }
+.local-ticket .future-available b { font-size: 14px; color: #2b72bd; margin: 0 2px; }
+.local-ticket .future-available-strip { height: 25px; margin-bottom: 7px; background: #f4f7fa; color: #8391a0; font-size: 11px; }
+.local-ticket .future-available-strip b { color: #526d86; }
+.local-ticket .future-fractions { gap: 4px; }
+.local-ticket .future-fractions button { height: 25px; font-size: 11px; background: #4b89ee; color: #fff; border-color: #4b89ee; }
+.local-ticket .future-fractions button:hover { background: #3377db; }
+.local-ticket .future-ticket-footer { padding-top: 8px; padding-bottom: 9px; }
+.local-ticket .future-submit { height: 35px; }
+.local-ticket .future-submit.buy { background: #f05a23; }
+.local-ticket .future-ticket-context { height: 27px; }
+
+@media (max-height: 780px) {
+  .future-quote { padding: 7px 12px; }
+  .future-quote-heading { font-size: 11px; }
+  .future-symbol { padding-top: 3px; }
+  .future-symbol strong { font-size: 12px; }
+  .future-price-row { padding-top: 1px; }
+  .future-price-row > b { font-size: 22px; }
+  .future-quote-meta { display: none; }
+  .future-book { margin-top: 3px; }
+  .future-book button { height: 16px; }
+  .local-ticket .future-ticket-context { height: 22px; }
+  .local-ticket .future-field { margin-bottom: 6px; }
+  .local-ticket .future-field select, .local-ticket .future-stepper,
+  .local-ticket .future-directions button, .future-offsets button { height: 27px; }
+  .future-local-entry { padding-top: 7px; margin-top: 0; margin-bottom: 5px; }
+  .local-ticket .future-available-strip { height: 22px; margin-bottom: 5px; }
+  .local-ticket .future-fractions button { height: 23px; }
+}
+
+@media (min-height: 781px) {
+  .future-quote { padding-top: 8px; padding-bottom: 8px; }
+  .future-symbol { padding-top: 5px; }
+  .future-price-row { padding-top: 3px; }
+  .future-quote-meta { padding-top: 4px; padding-bottom: 5px; }
+  .future-book button { height: 17px; }
+}
+
+.local-ticket .future-ticket-header { height: 30px; }
+.local-ticket .future-type-tabs { height: 30px; }
+.local-ticket .future-ticket-context { height: 23px; }
+.local-ticket .future-field { margin-bottom: 6px; }
+.local-ticket .future-local-entry { padding-top: 8px; margin-bottom: 5px; }
+
+/* Keep the original single-field rows and place closeable inventory below offset. */
+.local-ticket .future-two-fields { display: contents; }
+.local-ticket .future-local-entry { border: 0; padding: 5px 0 0; margin: 0 0 4px; }
+.future-position-availability { min-height: 25px; display: grid; grid-template-columns: max-content 1fr 1fr 1fr; align-items: center; gap: 6px; margin: 0 0 5px 70px; color: #8b96a2; font-size: 10px; white-space: nowrap; }
+.future-position-availability b { color: #477aac; font-size: 12px; font-weight: 600; }
+.future-available-main { color: #7a8794; }
+.future-position-side { text-align: center; }
+.future-position-today, .future-position-yesterday { text-align: right; }
+.future-position-availability .future-position-side { color: #85909b; }
+.future-ticket .ticket-preset { margin-left:90px; }
+.future-ticket .future-reset + .future-reset { margin-left:0; }

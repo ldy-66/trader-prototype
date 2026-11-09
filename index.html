@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Trader 端桌面交易工作台高保真原型" />
     <title>Trader Workspace Prototype</title>
+    <link rel="stylesheet" href="message-center.css">
     <link rel="stylesheet" href="styles.css" />
-  </head>
+  <link rel="stylesheet" href="ticket-settings.css">
+  <link rel="stylesheet" href="futures.css">
+</head>
   <body>
     <svg class="svg-defs" aria-hidden="true">
       <symbol id="i-market" viewBox="0 0 24 24"><path d="M4 17.5 9 12l3.5 3.5L20 7"/><path d="M15 7h5v5"/><rect x="2.5" y="2.5" width="19" height="19" rx="3"/></symbol>
@@ -44,8 +47,14 @@
       </aside>
 
       <main id="workspace" class="workspace" tabindex="-1"></main>
+      <aside id="pendingTaskReminder" class="pending-task-reminder" aria-live="polite"></aside>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
+    <script src="notification-channels.js"></script>
+    <script src="message-center.js"></script>
+    <script src="ticket-settings.js"></script>
+    <script src="algorithm-order.js"></script>
     <script src="app.js"></script>
+    <script src="futures.js"></script>
   </body>
 </html>

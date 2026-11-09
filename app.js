@@ -57,7 +57,9 @@ const approvalRows = [
   ["AP-20261010-002", "ORD-DEMO-02", "2026-10-10", "10:21:06", "委托（Slice）", "待审批", "是", "600000.SH", "限价单", "5,000", "9.52", "卖出"],
 ];
 
+orderRows[0].submittedAt = "10:20";
 const notificationRows = [
+  { id: 10, category: "订单", orderLevel: "母单", event: "待确认", level: "info", icon: "i", title: "HighTouch 母单待确认", summary: "资金账号 DEMO-1001 的 000001.SZ 买入母单等待交易员确认。", body: "HighTouch母单提交后需要交易员确认。请前往委托列表查看并处理；此消息的已读状态不改变订单任务状态。", time: "10:20", unread: true, orderRef: orderRows[0], account: orderRows[0][3], client: "--", mode: orderRows[0][6] },
   { id: 1, category: "订单", orderLevel: "母单", event: "拒单", level: "danger", icon: "!", title: "母单拒单", summary: "客户 A 的 000001.SZ 母单未通过 OMS 校验。", body: "该母单在进入后续处理前被拒绝，请根据拒单原因处理后再决定是否重新提交。", time: "10:21", unread: true, order: "P-ORD-DEMO-01", parentOrder: "P-ORD-DEMO-01", childOrder: "--", account: "DEMO-1001", client: "客户 A", mode: "HighTouch", rejectStage: "OMS 校验", rejectReason: "委托价格超出当前允许范围" },
   { id: 2, category: "订单", orderLevel: "子单", event: "拒单", level: "danger", icon: "!", title: "子单拒单", summary: "客户 B 的 600000.SH 子单在柜台报送环节被拒绝。", body: "该子单报送柜台后被拒绝，请检查拒单原因、母单剩余可执行数量及后续路由处理。", time: "10:18", unread: true, order: "C-ORD-DEMO-02", parentOrder: "P-ORD-DEMO-02", childOrder: "C-ORD-DEMO-02", account: "DEMO-1002", client: "客户 B", mode: "LowTouch", rejectStage: "柜台报送", rejectReason: "柜台返回：申报数量不符合要求" },
   { id: 3, category: "订单", orderLevel: "母单", event: "已提交", level: "success", icon: "✓", title: "母单提交成功", summary: "客户 A 的 000001.SZ 买入母单已提交。", body: "买入母单已成功提交，后续拆单和执行结果可在订单列表中查看。", time: "10:05", unread: true, order: "P-ORD-DEMO-03", parentOrder: "P-ORD-DEMO-03", childOrder: "--", account: "DEMO-1001", client: "客户 A", mode: "HighTouch" },
@@ -70,7 +72,9 @@ const notificationRows = [
 ];
 
 let state = {
-  view: "market",
+  view: "orders",
+  tradePage: "期货交易",
+  algorithmType: "无",
   direction: "buy",
   selectedSymbol: 1,
   price: 10.80,
@@ -102,15 +106,18 @@ let state = {
   notificationOpen: false,
   notificationFilter: "全部",
   notificationSubFilter: "全部",
-  selectedNotification: 1,
+  selectedNotification: null,
+  notificationPage: "list",
 };
 
 const mainNav = document.querySelector("#mainNav");
 const workspace = document.querySelector("#workspace");
 const toast = document.querySelector("#toast");
+const noticeChannels = NoticeChannels.connect("Trader", workspace);
 const notificationBell = document.querySelector("#notificationBell");
 const notificationBadge = document.querySelector("#notificationBadge");
 const notificationLayer = document.querySelector("#notificationLayer");
+const pendingTaskReminder = document.querySelector("#pendingTaskReminder");
 
 mainNav.innerHTML = navItems.map(([id, label, icon]) => `
   <button class="nav-item" data-view="${id}" type="button" title="${label}">
@@ -124,10 +131,54 @@ document.querySelectorAll(".nav-item").forEach((item) => {
 notificationBell.addEventListener("click", (event) => {
   event.stopPropagation();
   state.notificationOpen = !state.notificationOpen;
+  if (state.notificationOpen) state.notificationPage = "list";
   renderNotificationCenter();
 });
 
-notificationLayer.addEventListener("click", event => event.stopPropagation());
+notificationLayer.addEventListener("click", event => {
+  event.stopPropagation();
+  const target = event.target instanceof Element ? event.target : event.target.parentElement;
+  if (target?.closest("#openFullNotifications")) {
+    state.notificationOpen = false;
+    renderNotificationCenter();
+    fullMessages.open();
+    return;
+  }
+  const filterButton = target?.closest("[data-notification-filter]");
+  if (filterButton) {
+    state.notificationFilter = filterButton.dataset.notificationFilter;
+    state.notificationSubFilter = "全部";
+    state.selectedNotification = null;
+    state.notificationPage = "list";
+    renderNotificationCenter();
+    return;
+  }
+
+  const subfilterButton = target?.closest("[data-notification-subfilter]");
+  if (subfilterButton) {
+    state.notificationSubFilter = subfilterButton.dataset.notificationSubfilter;
+    state.selectedNotification = null;
+    state.notificationPage = "list";
+    renderNotificationCenter();
+    return;
+  }
+
+  const messageButton = target?.closest("[data-notification-id]");
+  if (messageButton) {
+    const message = notificationRows.find(item => item.id === Number(messageButton.dataset.notificationId));
+    if (!message) return;
+    message.unread = false;
+    state.selectedNotification = message.id;
+    state.notificationPage = "detail";
+    renderNotificationCenter();
+    return;
+  }
+
+  if (target?.closest("#markNotificationsRead")) {
+    notificationRows.forEach(item => { item.unread = false; });
+    renderNotificationCenter();
+  }
+});
 
 document.addEventListener("click", (event) => {
   if (!state.notificationOpen || event.target.closest(".notification-center")) return;
@@ -143,7 +194,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 function navigate(view) {
-  if (["strategy", "system"].includes(view)) {
+  if (view === "strategy") {
     notify(`${view === "strategy" ? "策略" : "系统"}模块待补充截图后继续复刻`);
     return;
   }
@@ -153,29 +204,42 @@ function navigate(view) {
 
 function render() {
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === state.view));
-  const views = { market: marketView, orders: ordersView, lending: lendingView, data: dataView, risk: riskView, config: configView, approval: approvalView };
+  if (state.view === "system") {
+    noticeChannels.open();
+    return;
+  }
+  noticeChannels.close();
+  const views = { market: marketView, orders: tradingWorkspaceView, lending: lendingView, data: dataView, risk: riskView, config: configView, approval: approvalView };
   workspace.innerHTML = views[state.view]() + modalView();
   bindInteractions();
+  bindFuturesInteractions();
+  renderPendingTaskReminder();
   renderNotificationCenter();
 }
 
+function renderPendingTaskReminder() {
+  const tasks = orderRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => row[1] === "待确认" && row[6] === "HighTouch");
+  document.querySelector(".app-shell").classList.toggle("has-pending-reminder", tasks.length > 0);
+  pendingTaskReminder.classList.toggle("show", tasks.length > 0);
+  if (!tasks.length) {
+    pendingTaskReminder.innerHTML = "";
+    return;
+  }
+  const { row, index } = tasks[0];
+  const extra = tasks.length > 1 ? `，另有 ${tasks.length - 1} 笔` : "";
+  pendingTaskReminder.innerHTML = `<div class="pending-task-card"><span class="pending-task-icon">i</span><span class="pending-task-copy"><span class="pending-task-title">HighTouch 待确认订单${tasks.length > 1 ? `（${tasks.length}）` : ""}</span><span class="pending-task-summary">${row[3]} · ${row[5]} · ${row[0]}${extra}</span></span><button class="pending-task-action" data-open-pending-order="${index}" type="button">${tasks.length === 1 ? "前往处理" : "查看待确认"}</button></div>`;
+  pendingTaskReminder.querySelector("[data-open-pending-order]").addEventListener("click", () => tasks.length === 1 ? goToTraderOrder({orderRef:row}) : fullMessages.open("订单", MessageCenter.pending));
+}
+
 function visibleNotifications() {
-  let rows = state.notificationFilter === "全部"
-    ? notificationRows
-    : notificationRows.filter(item => item.category === state.notificationFilter);
-  if (state.notificationFilter === "订单" && state.notificationSubFilter !== "全部") {
-    rows = state.notificationSubFilter === "拒单"
-      ? rows.filter(item => item.event === "拒单")
-      : rows.filter(item => item.orderLevel === state.notificationSubFilter);
-  }
-  if (state.notificationFilter === "市场" && state.notificationSubFilter !== "全部") {
-    rows = rows.filter(item => item.market === state.notificationSubFilter);
-  }
-  return rows;
+  return MessageCenter.list(notificationRows, state.notificationFilter, state.notificationSubFilter);
 }
 
 function notificationMeta(item) {
   if (item.category === "订单") {
+    if (item.event === "待确认") return ["下单时间", item.orderRef?.submittedAt, "订单层级", item.orderLevel, "资金账号", item.account, "标的代码", item.orderRef?.[5], "订单模式", item.mode];
     const rows = ["订单层级", item.orderLevel, "客户", item.client, "资金账号", item.account, "订单模式", item.mode, "母单号", item.parentOrder, "子单号", item.childOrder];
     if (item.event === "拒单") rows.push("拒单环节", item.rejectStage, "拒单原因", item.rejectReason);
     return rows;
@@ -197,58 +261,69 @@ function renderNotificationCenter() {
 
   const filters = ["全部", "订单", "市场", "风控", "系统"];
   const visible = visibleNotifications();
-  const selected = state.selectedNotification == null
-    ? null
-    : visible.find(item => item.id === state.selectedNotification) || visible[0];
+  const selected = notificationRows.find(item => item.id === state.selectedNotification) || null;
   const categoryCount = category => category === "全部"
     ? notificationRows.length
     : notificationRows.filter(item => item.category === category).length;
+  const filterMarkup = `<div class="notification-filters">${filters.map(filter => `<button class="notification-filter ${filter === state.notificationFilter ? "active" : ""}" data-notification-filter="${filter}" type="button">${filter} ${categoryCount(filter)}</button>`).join("")}</div>`;
+  const subfilterOptions = MessageCenter.filters(state.notificationFilter, true);
+  const currentSubfilterLabel = subfilterOptions.find(([value]) => value === state.notificationSubFilter)?.[1] || subfilterOptions[0]?.[1] || "";
+  const subfilterMarkup = subfilterOptions.length
+    ? `<div class="notification-subfilters">${subfilterOptions.map(([value, label]) => `<button class="notification-subfilter ${value === state.notificationSubFilter ? "active" : ""}" data-notification-subfilter="${value}" aria-pressed="${value === state.notificationSubFilter}" type="button">${label}</button>`).join("")}<span class="notification-filter-current">当前筛选：${currentSubfilterLabel}</span></div>`
+    : "";
 
-  notificationLayer.innerHTML = `<section class="notification-popover" role="dialog" aria-label="消息通知">
-    <header class="notification-head"><h2>消息通知 <span class="notification-total">${unreadCount} 条未读</span></h2><button id="markNotificationsRead" type="button">全部已读</button></header>
-    <div class="notification-filters">${filters.map(filter => `<button class="notification-filter ${filter === state.notificationFilter ? "active" : ""}" data-notification-filter="${filter}" type="button">${filter} ${categoryCount(filter)}</button>`).join("")}</div>
-    ${state.notificationFilter === "订单" ? `<div class="notification-subfilters">${[["全部", "全部订单"], ["母单", "母单"], ["子单", "子单"], ["拒单", "全部拒单"]].map(([value, label]) => `<button class="notification-subfilter ${value === state.notificationSubFilter ? "active" : ""}" data-notification-subfilter="${value}" type="button">${label}</button>`).join("")}</div>` : state.notificationFilter === "市场" ? `<div class="notification-subfilters">${[["全部", "全部市场"], ["沪深", "沪深"], ["港股", "港股"], ["美股", "美股"]].map(([value, label]) => `<button class="notification-subfilter ${value === state.notificationSubFilter ? "active" : ""}" data-notification-subfilter="${value}" type="button">${label}</button>`).join("")}</div>` : ""}
-    <div class="notification-list">${visible.length ? visible.map(item => `<button class="notification-item ${item.unread ? "unread" : ""} ${selected?.id === item.id ? "selected" : ""}" data-notification-id="${item.id}" type="button">
-      <span class="notification-icon ${item.level}">${item.icon}</span>
-      <span class="notification-copy"><span class="notification-title-row"><span class="notification-title">${item.title}</span><span class="notification-status">${item.category === "订单" ? `${item.orderLevel} · ${item.event}` : item.category === "市场" ? `${item.market} · ${item.event}` : item.event}</span></span><span class="notification-summary">${item.summary}</span></span>
-      <span class="notification-time">${item.time}</span>
-    </button>`).join("") : `<div class="notification-empty">当前分类暂无消息</div>`}</div>
-    ${selected ? `<footer class="notification-detail"><div class="notification-detail-head"><b>${selected.title}</b><span>今天 ${selected.time}</span></div><p>${selected.body}</p><div class="notification-meta">${notificationMeta(selected).map(value => `<span>${value ?? "--"}</span>`).join("")}</div><div class="notification-detail-actions"><button class="btn ghost" id="closeNotificationDetail" type="button">收起</button>${selected.category === "订单" ? `<button class="btn primary" id="openRelatedOrder" type="button">查看相关订单</button>` : ""}</div></footer>` : ""}
-  </section>`;
+  if (state.notificationPage === "detail" && selected) {
+    const typeLabel = selected.category === "订单"
+      ? `${selected.orderLevel} · ${selected.event}`
+      : selected.category === "市场" ? `${selected.market} · ${selected.event}` : selected.event;
+    notificationLayer.innerHTML = `<section class="notification-popover notification-popover-detail" role="dialog" aria-label="消息详情">
+      <header class="notification-head notification-detail-header"><button id="backToNotificationList" type="button">‹ 返回列表</button><h2>消息详情</h2><span class="notification-detail-date">今天 ${selected.time}</span></header>
+      <div class="notification-detail-content">
+        <div class="notification-detail-title"><span class="notification-icon ${selected.level}">${selected.icon}</span><div><h3>${selected.title}</h3><span class="notification-detail-type">${selected.category} · ${typeLabel}</span></div></div>
+        <p class="notification-detail-body">${selected.body}</p>
+        <div class="notification-meta">${notificationMeta(selected).map(value => `<span>${value ?? "--"}</span>`).join("")}</div>
+      </div>
+      ${traderOrderAction(selected) ? `<footer class="notification-detail-actions"><button class="btn primary" id="openRelatedOrder" type="button">${traderOrderAction(selected)}</button></footer>` : ""}
+    </section>`;
+    notificationLayer.querySelector("#backToNotificationList")?.addEventListener("click", () => {
+      state.notificationPage = "list";
+      renderNotificationCenter();
+    });
+  } else {
+    state.notificationPage = "list";
+    notificationLayer.innerHTML = `<section class="notification-popover" role="dialog" aria-label="消息通知">
+      <header class="notification-head"><h2>消息通知 <span class="notification-total">${unreadCount} 条未读</span></h2><button id="markNotificationsRead" type="button">全部已读</button></header>
+      ${filterMarkup}${subfilterMarkup}
+      <div class="notification-list">${visible.length ? visible.map(item => `<button class="notification-item ${item.unread ? "unread" : ""}" data-notification-id="${item.id}" type="button">
+        <span class="notification-icon ${item.level}">${item.icon}</span>
+        <span class="notification-copy"><span class="notification-title-row"><span class="notification-title">${item.title}</span><span class="notification-status">${item.category === "订单" ? `${item.orderLevel} · ${item.event}` : item.category === "市场" ? `${item.market} · ${item.event}` : item.event}</span></span><span class="notification-summary">${item.summary}</span></span>
+        <span class="notification-time">${item.time}</span>
+      </button>`).join("") : `<div class="notification-empty">当前分类暂无消息</div>`}</div>
+      <footer class="notification-footer"><button id="openFullNotifications" type="button">全部消息 ›</button></footer>
+    </section>`;
 
-  notificationLayer.querySelectorAll("[data-notification-filter]").forEach(button => button.addEventListener("click", () => {
-    state.notificationFilter = button.dataset.notificationFilter;
-    state.notificationSubFilter = "全部";
-    const nextVisible = visibleNotifications();
-    if (!nextVisible.some(item => item.id === state.selectedNotification)) state.selectedNotification = nextVisible[0]?.id || null;
-    renderNotificationCenter();
-  }));
-  notificationLayer.querySelectorAll("[data-notification-subfilter]").forEach(button => button.addEventListener("click", () => {
-    state.notificationSubFilter = button.dataset.notificationSubfilter;
-    const nextVisible = visibleNotifications();
-    if (!nextVisible.some(item => item.id === state.selectedNotification)) state.selectedNotification = nextVisible[0]?.id || null;
-    renderNotificationCenter();
-  }));
-  notificationLayer.querySelectorAll("[data-notification-id]").forEach(button => button.addEventListener("click", () => {
-    const message = notificationRows.find(item => item.id === Number(button.dataset.notificationId));
-    if (!message) return;
-    message.unread = false;
-    state.selectedNotification = message.id;
-    renderNotificationCenter();
-  }));
-  notificationLayer.querySelector("#markNotificationsRead")?.addEventListener("click", () => {
-    notificationRows.forEach(item => { item.unread = false; });
-    renderNotificationCenter();
-  });
-  notificationLayer.querySelector("#closeNotificationDetail")?.addEventListener("click", () => {
-    state.selectedNotification = null;
-    renderNotificationCenter();
-  });
-  notificationLayer.querySelector("#openRelatedOrder")?.addEventListener("click", () => {
-    state.notificationOpen = false;
-    navigate("orders");
-    notify("已定位至相关订单列表（原型）");
-  });
+  }
+
+  notificationLayer.querySelector("#openRelatedOrder")?.addEventListener("click", () => goToTraderOrder(selected));
+}
+
+function traderOrderAction(item) {
+  if (!item?.orderRef || !orderRows.includes(item.orderRef)) return "";
+  return item.orderRef[1] === "待确认" && item.orderRef[6] === "HighTouch" ? "前往处理" : "查看相关订单";
+}
+
+function goToTraderOrder(item) {
+  const index = orderRows.indexOf(item?.orderRef);
+  if (index < 0) { notify("找不到关联订单"); return false; }
+  state.notificationOpen = false;
+  state.orderAttributeFilter = "";
+  state.orderAttributeDraft = "";
+  state.view = "orders";
+  state.tradePage = "证券交易";
+  state.selectedOrder = index;
+  render();
+  workspace.querySelector(`[data-order-row="${index}"]`)?.scrollIntoView({block:"nearest"});
+  return true;
 }
 
 function marketView() {
@@ -327,6 +402,7 @@ function orderForm() {
     <div class="qty-hint">可买数量 <b>${isBuy ? "25,000" : "0"}</b></div>
     <div class="fractions"><button data-fraction=".25">1/4</button><button data-fraction=".3333">1/3</button><button data-fraction=".5">1/2</button><button data-fraction="1">全仓</button></div>
     <label class="form-row"><span class="form-label">订单模式</span><select class="form-control" id="orderModeSelect">${["ALL", "HighTouch", "LowTouch"].map(x => `<option ${x === state.orderMode ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+    <label class="form-row"><span class="form-label">算法类型</span><select class="form-control" id="algorithmTypeSelect"><option>无</option><option ${state.algorithmType === "TWAP" ? "selected" : ""}>TWAP</option></select></label>
     <div class="mode-hint">${state.orderMode === "HighTouch" ? "需交易员接收确认，可直接下单或拆单" : state.orderMode === "LowTouch" ? "校验通过后自动进入报单流程" : "按系统已配置的适用规则处理"}</div>
     ${state.orderMode === "HighTouch" ? `<label class="check-row"><input id="noApproval" type="checkbox" ${state.noApproval?"checked":""}> 无需审批 <span>仍执行风控及验资验券</span></label>` : ""}
     <label class="check-row"><input id="manualOrder" type="checkbox" ${state.manualOrder?"checked":""}> 手工单 ${state.manualOrder?`<input class="inline-time" type="time" value="10:18">`:""}</label>
@@ -466,11 +542,27 @@ function positionDetailPage() {
     samplePosition("期货", "—", "—", "IF2612.CFE", "演示期货合约", "12", "10", "1", "1,296,000.00", "72,000.00"),
     samplePosition("债券", "110001.SH", "演示债券A", "—", "—", "6,000", "5,500", "100", "1,296,000.00", "72,000.00"),
   ];
-  const selectedColumns = columnsByMode[state.positionMode] || columnsByMode["明细"];
+  const baseColumns = columnsByMode[state.positionMode] || columnsByMode["明细"];
+  const showBuckets = state.positionMode === "对客" && state.positionMarket === "期货";
+  const selectedColumns = showBuckets ? [...baseColumns, "今仓", "昨仓", "今仓冻结", "昨仓冻结"] : baseColumns;
   const modeKey = state.positionMode === "对客" ? "client" : state.positionMode === "对冲" ? "hedge" : "detail";
   const boardOptions = ["全部", "主板", "科创板", "创业板", "港股", "美股"].map(board => "<option value=\"" + board + "\"" + (state.positionBoardFilter === board ? " selected" : "") + ">" + board + "</option>").join("");
   const boardFilter = state.positionMarket === "证券" ? "<label class=\"board-filter-field\">板块<select class=\"select-field board-filter\" data-position-board-filter>" + boardOptions + "</select></label>" : "";
-  const selectedRows = positionRows.filter(row => row.marketType === state.positionMarket && (state.positionMarket !== "证券" || state.positionBoardApplied === "全部" || row.board === state.positionBoardApplied)).map(row => selectedColumns.map(column => row[modeKey][column] ?? "—"));
+  let selectedRows = positionRows.filter(row => row.marketType === state.positionMarket && (state.positionMarket !== "证券" || state.positionBoardApplied === "全部" || row.board === state.positionBoardApplied)).map(row => selectedColumns.map(column => row[modeKey][column] ?? "—"));
+  if (showBuckets) selectedRows = ["多头", "空头"].map(side => {
+    const position = futurePosition(side);
+    return {
+      ...Object.fromEntries(selectedColumns.map((column, i) => [column, selectedRows[0]?.[i] ?? "—"])), "交易账户": futures.account,
+      "资金账号": futures.fund,
+      "交易对手名称": futures.customer,
+      "框架名称": futures.frame, "合约代码": currentFuture().code, "合约名称": currentFuture().name,
+      "持仓类型": side, "持仓数量": position.today + position.yesterday,
+      "可用数量": position.availableToday + position.availableYesterday,
+      "交易冻结数量": position.frozenToday + position.frozenYesterday,
+      "今仓": position.today, "昨仓": position.yesterday,
+      "今仓冻结": position.frozenToday, "昨仓冻结": position.frozenYesterday,
+    };
+  }).map(row => selectedColumns.map(column => row[column] ?? "—"));
   return `<div class="position-query-page">
     <div class="position-filters">
       <div class="toolbar compact data-filter"><input class="field" placeholder="客户名称"><input class="field" placeholder="客户名"><input class="field" placeholder="交易账户"><input class="field" placeholder="交易对手名称"><input class="field" placeholder="交易对手简称"></div>
@@ -727,7 +819,7 @@ function bindInteractions() {
     render();
     notify(`筛选完成，共 ${matchingIndexes.length} 条委托`);
   });
-  document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); const index=Number(btn.dataset.approveOrder); orderRows[index][1] = "已确认"; state.selectedOrder=index; render(); notify("订单已确认，可选择直接下单或拆单"); }));
+  document.querySelectorAll("[data-approve-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); const index=Number(btn.dataset.approveOrder); orderRows[index][1] = "已确认"; state.selectedOrder=index; render(); fullMessages.refresh(); notify("订单已确认，可选择直接下单或拆单"); }));
   document.querySelectorAll("[data-direct-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"direct-order",index:Number(btn.dataset.directOrder)}; render(); }));
   document.querySelectorAll("[data-split-order]").forEach(btn => btn.addEventListener("click", (event) => { event.stopPropagation(); state.modal={type:"split-order",index:Number(btn.dataset.splitOrder)}; render(); }));
   document.querySelectorAll("[data-manual-fill]").forEach(btn => btn.addEventListener("click", () => { const [parent,child]=btn.dataset.manualFill.split(":").map(Number); const row=childOrders[parent]?.[child]; if(!row?.manual) return notify("电子子单已发起撤单演示"); state.modal={type:"manual-fill",index:parent,child}; render(); }));
@@ -742,8 +834,48 @@ function bindInteractions() {
   document.querySelector("#saveChildOrders")?.addEventListener("click", () => { const index=Number(document.querySelector("#saveChildOrders").dataset.parentIndex); const prices=[...document.querySelectorAll(".child-price")]; const qtys=[...document.querySelectorAll(".child-qty")]; const modes=[...document.querySelectorAll(".child-mode")]; const manuals=[...document.querySelectorAll(".child-manual")]; childOrders[index]=prices.map((p,i)=>({manual:manuals[i].checked,values:[`SUB-${index+1}${i+1}`,orderRows[index][5],modes[i].value,p.value,Number(qtys[i].value).toLocaleString(),manuals[i].checked?"待补录":"已报"]})); state.modal=null; state.selectedOrder=index; render(); notify(`${childOrders[index].length} 笔子单已生成并联动展示`); });
   document.querySelector("#saveExecution")?.addEventListener("click", () => { const index=state.modal.index; tradeExecutions[index] ||= []; tradeExecutions[index].push([orderRows[index][5],`EXEC-${index+1}${tradeExecutions[index].length+1}`,document.querySelector("#executionPrice").value,Number(document.querySelector("#executionQty").value).toLocaleString(),"手工成交"]); state.modal=null; render(); notify("手工成交已保存并汇总至母单（原型）"); });
   document.querySelector("#resetOrder")?.addEventListener("click", () => { state.price = 10.80; state.quantity = 0; state.noApproval=false; state.manualOrder=false; render(); notify("下单信息已重置"); });
-  document.querySelector("#submitOrder")?.addEventListener("click", () => { state.modal={type:"order-confirm"}; render(); });
-  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", () => { const direction=state.tradeType==="空头交易"?(state.direction==="buy"?"卖开":"买平"):(state.direction==="buy"?"买入":"卖出"); orderRows.unshift([direction,state.orderMode==="HighTouch"?"待确认":"已报",state.tradeType,"DEMO-NEW",state.tradeType==="敞口控制交易"?"敞口订单":"DEMO-FRAME","000001.SZ",state.orderMode,state.price.toFixed(2),state.quantity.toLocaleString(),""]); state.modal=null; state.view="orders"; state.selectedOrder=0; render(); notify(state.orderMode==="HighTouch"?"HighTouch 母单已生成，等待交易员确认":"LowTouch 订单已进入自动报单流程"); });
+  document.querySelector("#algorithmTypeSelect")?.addEventListener("change", event => { state.algorithmType = event.target.value; });
+  document.querySelector("#submitOrder")?.addEventListener("click", () => {
+    if (state.algorithmType === "TWAP") {
+      if (!(state.price > 0 && state.quantity > 0)) return notify("请输入有效的委托价格和数量");
+      return AlgorithmOrder.open({
+        direction: state.direction === "buy" ? "买入" : "卖出",
+        price: state.price.toFixed(2), quantity: state.quantity,
+        onConfirm: submitTraderOrder,
+      });
+    }
+    state.modal = { type: "order-confirm" };
+    render();
+  });
+  document.querySelector("#confirmSubmitOrder")?.addEventListener("click", submitTraderOrder);
+}
+
+function submitTraderOrder() {
+    const direction = state.tradeType === "空头交易" ? (state.direction === "buy" ? "卖开" : "买平") : (state.direction === "buy" ? "买入" : "卖出");
+    const highTouch = state.orderMode === "HighTouch";
+    const newOrder = [direction, highTouch ? "待确认" : "已报", state.tradeType, "DEMO-NEW", state.tradeType === "敞口控制交易" ? "敞口订单" : "DEMO-FRAME", "000001.SZ", state.orderMode, state.price.toFixed(2), state.quantity.toLocaleString(), ""];
+    newOrder.submittedAt = new Date().toLocaleTimeString("zh-CN", {hour:"2-digit", minute:"2-digit"});
+    orderRows.unshift(newOrder);
+    noticeChannels.dispatch({
+      message: "order.submit",
+      dialog: highTouch ? "HT订单确认" : undefined,
+      sound: "orderSuccess",
+      addMessage: () => notificationRows.unshift(orderNotice(newOrder, highTouch)),
+      showDialog: () => NoticeChannels.showPopup("HighTouch 待确认订单", orderNotice(newOrder, true).summary),
+    });
+    state.modal = null;
+    state.view = "orders";
+    state.selectedOrder = 0;
+    render();
+    fullMessages.refresh();
+}
+
+function orderNotice(row, pending, id = Date.now()) {
+  const title = pending ? "HighTouch 母单待确认" : "母单提交成功";
+  const summary = `资金账号 ${row[3]} 的 ${row[5]} ${row[0]}母单${pending ? "待确认" : "已提交"}。`;
+  return {id, category:"订单", orderLevel:"母单", event:pending ? "待确认" : "已提交",
+    level:"info", icon:"i", title, summary, body:summary, time:row.submittedAt || "--",
+    unread:true, orderRef:row, account:row[3], mode:row[6]};
 }
 
 let toastTimer;
@@ -754,5 +886,24 @@ function notify(message) {
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2300);
 }
 
-render();
+const anomalyKey = "oms.notice.trader.anomalies";
+let storedAnomalies = [];
+try { storedAnomalies = JSON.parse(localStorage.getItem(anomalyKey)) || []; } catch {}
+const anomalyFeedback = [...storedAnomalies, ...notificationRows.filter(item => item.event === "拒单")];
+const fullMessages = MessageCenter.create({
+  rows:notificationRows, meta:notificationMeta, onRead:renderNotificationCenter,
+  orderAction:traderOrderAction, goToOrder:goToTraderOrder, archiveRows:() => anomalyFeedback,
+  pendingRows:() => orderRows.flatMap((row,index) => {
+    if (row[1] !== "待确认" || row[6] !== "HighTouch") return [];
+    return [notificationRows.find(item => item.orderRef === row) || orderNotice(row,true,-index-1)];
+  }),
+});
 
+NoticeChannels.bindSamples(noticeChannels, notificationRows, () => {
+  renderNotificationCenter();
+  fullMessages.refresh();
+}, item => {
+  anomalyFeedback.unshift(item);
+  storedAnomalies.unshift(item);
+  try { localStorage.setItem(anomalyKey, JSON.stringify(storedAnomalies)); } catch {}
+});
