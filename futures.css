@@ -8,7 +8,12 @@
 .futures-workspace button:focus-visible, .future-modal button:focus-visible { outline: 2px solid #287ce8; outline-offset: 2px; }
 .futures-main { gap: 8px; }
 .future-orders { flex: 1.35; min-height: 235px; display: flex; flex-direction: column; overflow: hidden; }
-.future-holdings { flex: 1; min-height: 170px; display: flex; flex-direction: column; overflow: hidden; }
+.future-linked-panels { flex: 1; min-height: 170px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; overflow: hidden; }
+.future-linked-panel { min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.future-linked-panel .panel-title { flex: none; height: 30px; padding: 0 10px; border-bottom: 1px solid #d3d8df; }
+.future-linked-panel .table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.future-linked-panel table { min-width: 680px; }
+.future-linked-empty { padding: 30px 8px; color: #a0a8b0; font-size: 11px; text-align: center; }
 .future-panel-tabs { display: flex; align-items: center; gap: 3px; min-height: 37px; padding: 0 8px; border-bottom: 1px solid #cfd5dc; }
 .future-panel-tabs > button:not(.future-text-button) { border: 0; background: transparent; color: #67717d; padding: 10px 13px; height: 37px; position: relative; white-space: nowrap; }
 .future-panel-tabs > button.active { color: #176cc9; font-weight: 600; }
@@ -251,11 +256,9 @@
 /* Keep the original single-field rows and place closeable inventory below offset. */
 .local-ticket .future-two-fields { display: contents; }
 .local-ticket .future-local-entry { border: 0; padding: 5px 0 0; margin: 0 0 4px; }
-.future-position-availability { min-height: 25px; display: grid; grid-template-columns: max-content 1fr 1fr 1fr; align-items: center; gap: 6px; margin: 0 0 5px 70px; color: #8b96a2; font-size: 10px; white-space: nowrap; }
+.future-position-availability { min-height: 25px; display: grid; grid-template-columns: max-content 1fr 1fr; align-items: center; gap: 6px; margin: 0 0 5px 70px; color: #8b96a2; font-size: 10px; white-space: nowrap; }
 .future-position-availability b { color: #477aac; font-size: 12px; font-weight: 600; }
 .future-available-main { color: #7a8794; }
-.future-position-side { text-align: center; }
 .future-position-today, .future-position-yesterday { text-align: right; }
-.future-position-availability .future-position-side { color: #85909b; }
 .future-ticket .ticket-preset { margin-left:90px; }
 .future-ticket .future-reset + .future-reset { margin-left:0; }
