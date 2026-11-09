@@ -11,7 +11,7 @@ const futuresContracts = [
 const futures = {
   contract: 0, direction: "sell", offset: "today", price: 3128, qty: 1,
   account: "交易账户01", customer: "演示交易对手01", fund: "DEMO-F01", channel: "渠道A", frame: "期货框架01", mode: "HighTouch",
-  type: "期货交易", lowerTab: "当前持仓", listTab: "委托列表",
+  type: "期货交易", listTab: "委托列表",
   expanded: false, modal: null, error: "", selectedOrder: "F20261105003",
   filterDirection: "全部", filterOffset: "全部", filterContract: "全部", query: null,
   noApproval: false, manual: false,
@@ -133,7 +133,9 @@ function futurePositionTable(full = false) {
 
 function futureLowerPanel() {
   const selected = futuresOrders.find(row => row.id === futures.selectedOrder);
-  return `<section class="panel future-holdings"><div class="future-panel-tabs">${["当前持仓", "对冲委托订单", "对冲成交列表"].map(label => `<button data-future-lower="${label}" class="${futures.lowerTab === label ? "active" : ""}">${label}</button>`).join("")}<span class="toolbar-spacer"></span>${futures.lowerTab === "当前持仓" ? '<button class="future-text-button" data-future-position-page>持仓查询 ↗</button>' : ""}</div>${futures.lowerTab === "当前持仓" ? `<div class="future-position-context"><span>${futures.account}</span><span>${currentFuture().name}</span><span>${futures.channel} / ${futures.frame}</span><span class="toolbar-spacer"></span><span>单位　手</span></div>${futurePositionTable()}` : `<div class="future-position-context">委托编号　${selected?.id || "—"}</div><div class="table-wrap"><table class="data-table"><thead><tr>${(futures.lowerTab === "对冲委托订单" ? ["子单编号", "合约代码", "买卖方向", "开平标识", "委托数量", "委托状态"] : ["成交编号", "合约代码", "买卖方向", "开平标识", "成交价格", "成交数量"]).map(x => `<th>${x}</th>`).join("")}</tr></thead></table><div class="future-empty">${selected?.status === "待确认" ? "待交易员确认" : "暂无记录"}</div></div>`}</section>`;
+  const empty = selected?.status === "待确认" ? "待交易员确认" : "暂无记录";
+  const linkedPanel = (title, headers) => `<section class="panel future-linked-panel"><div class="panel-title">${title}</div><div class="table-wrap"><table class="data-table"><thead><tr>${headers.map(label => `<th>${label}</th>`).join("")}</tr></thead><tbody></tbody></table><div class="future-linked-empty">${empty}</div></div></section>`;
+  return `<div class="future-linked-panels">${linkedPanel("对冲委托订单", ["序列", "操作", "子单编号", "合约代码", "买卖方向", "开平标识", "委托数量", "委托状态"])}${linkedPanel("对冲成交列表", ["序列", "标的代码", "合约代码", "成交编号", "成交价格", "成交数量", "成交时间"])}</div>`;
 }
 
 function futureQuotePanel() {
@@ -171,7 +173,7 @@ function futureOrderForm() {
       <div class="future-local-entry">
         <div class="future-field future-direction-row"><span>买卖方向</span><div class="future-directions">${["buy", "sell"].map(side => `<button class="${side} ${futures.direction === side ? "active" : ""}" aria-pressed="${futures.direction === side}" data-future-direction="${side}">${side === "buy" ? "买入" : "卖出"}</button>`).join("")}</div></div>
         <div class="future-field"><span>开平标识</span><div class="future-offsets count-${offsets.length}" role="group" aria-label="开平标识">${offsets.map(o => `<button class="${futures.offset === o.value ? "active" : ""}" aria-pressed="${futures.offset === o.value}" title="${o.value === "auto" ? `自动拆单，${futureAutoOffsetLabel(contract)}` : o.label}" data-future-offset="${o.value}">${o.label}</button>`).join("")}</div></div>
-        <div class="future-position-availability"><span class="future-available-main">${availableLabel} <b id="futureAvailableQty">${futureAvailable()}</b> 手</span><span class="future-position-side">${isBuy ? "空头" : "多头"}</span>${positionBreakdown}</div>
+        <div class="future-position-availability"><span class="future-available-main">${availableLabel} <b id="futureAvailableQty">${futureAvailable()}</b> 手</span>${positionBreakdown}</div>
         ${futureStepper("委托价格", "price", futures.price, currentFuture().tick)}
         ${futureStepper("委托数量", "qty", futures.qty, 1)}
         <div class="future-fractions">${[[.25, "1/4"], [1/3,"1/3"], [.5,"1/2"], [1,"全仓"]].map(([v,t]) => `<button data-future-fraction="${v}">${t}</button>`).join("")}</div>
@@ -365,7 +367,6 @@ function bindFuturesInteractions() {
   document.querySelectorAll("[data-future-order]").forEach(row => row.addEventListener("click", () => { futures.selectedOrder = row.dataset.futureOrder; render(); }));
   document.querySelectorAll("[data-future-cancel]").forEach(button => button.addEventListener("click", event => { event.stopPropagation(); futureCancel(button.dataset.futureCancel); }));
   document.querySelector("[data-future-cancel-selected]")?.addEventListener("click", () => futureCancel(futures.selectedOrder));
-  document.querySelectorAll("[data-future-lower]").forEach(button => button.addEventListener("click", () => { futures.lowerTab = button.dataset.futureLower; render(); }));
   document.querySelectorAll("[data-future-list]").forEach(button => button.addEventListener("click", () => { futures.listTab = button.dataset.futureList; render(); }));
   document.querySelectorAll("[data-future-type]").forEach(button => button.addEventListener("click", () => {
     futures.type = button.dataset.futureType;
