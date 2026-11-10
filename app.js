@@ -543,17 +543,19 @@ function positionDetailPage() {
     samplePosition("债券", "110001.SH", "演示债券A", "—", "—", "6,000", "5,500", "100", "1,296,000.00", "72,000.00"),
   ];
   const baseColumns = columnsByMode[state.positionMode] || columnsByMode["明细"];
-  const showBuckets = state.positionMode === "对客" && state.positionMarket === "期货";
+  const showBuckets = state.positionMode !== "明细" && state.positionMarket === "期货";
   const selectedColumns = showBuckets ? [...baseColumns, "今仓", "昨仓", "今仓冻结", "昨仓冻结"] : baseColumns;
   const modeKey = state.positionMode === "对客" ? "client" : state.positionMode === "对冲" ? "hedge" : "detail";
   const boardOptions = ["全部", "主板", "科创板", "创业板", "港股", "美股"].map(board => "<option value=\"" + board + "\"" + (state.positionBoardFilter === board ? " selected" : "") + ">" + board + "</option>").join("");
   const boardFilter = state.positionMarket === "证券" ? "<label class=\"board-filter-field\">板块<select class=\"select-field board-filter\" data-position-board-filter>" + boardOptions + "</select></label>" : "";
   let selectedRows = positionRows.filter(row => row.marketType === state.positionMarket && (state.positionMarket !== "证券" || state.positionBoardApplied === "全部" || row.board === state.positionBoardApplied)).map(row => selectedColumns.map(column => row[modeKey][column] ?? "—"));
   if (showBuckets) selectedRows = ["多头", "空头"].map(side => {
-    const position = futurePosition(side);
+    const position = state.positionMode === "对冲" ? futureHedge(side) : futurePosition(side);
     return {
       ...Object.fromEntries(selectedColumns.map((column, i) => [column, selectedRows[0]?.[i] ?? "—"])), "交易账户": futures.account,
       "资金账号": futures.fund,
+      "对冲渠道": futures.channel,
+      "对冲方资金账号": "DEMO-HEDGE-01",
       "交易对手名称": futures.customer,
       "框架名称": futures.frame, "合约代码": currentFuture().code, "合约名称": currentFuture().name,
       "持仓类型": side, "持仓数量": position.today + position.yesterday,
@@ -626,7 +628,15 @@ function executionQueryPage() {
 function hedgePositionPage() {
   const cards = [["可用资金","8,126,400.00"],["冻结资金","480,000.00"],["期初资金","8,500,000.00"],["持仓市值","2,057,600.00"]];
   const rows = [["QFII-DEMO", "HEDGE-DEMO01", "000001.SZ", "平安银行", "已上市", "多头", "8,000", "120,000", "10,000", "5,000", "10.62", "117,000", "125,000", "1,350,000.00"], ["CHANNEL-B", "HEDGE-DEMO02", "600000.SH", "浦发银行", "已上市", "多头", "3,000", "80,000", "0", "2,000", "9.38", "75,000", "77,000", "733,040.00"]];
-  return `<div class="toolbar compact"><input class="field" placeholder="对冲账号"><input class="field" placeholder="标的代码"><button class="btn primary" data-data-query>查询</button><button class="btn ghost" data-data-export>导出</button></div><div class="summary-cards">${cards.map(c=>`<div><span>${c[0]}</span><b>${c[1]}</b></div>`).join("")}</div>${tablePage(["对冲渠道","对冲账号","标的代码","标的名称","标的状态","持仓类型","冻结数量","期初数量","日内开仓成交数量","日内平仓成交数量","持仓均价","可用数量","持仓数量","持仓市值"], rows)}`;
+  const contract = currentFuture();
+  rows.forEach(row => row.splice(6, 0, "—", "—"));
+  for (const side of ["多头", "空头"]) {
+    const position = futureHedge(side);
+    rows.unshift([futures.channel, "DEMO-HEDGE-01", contract.code, contract.name, "已上市", side,
+      position.today, position.yesterday, position.frozenToday + position.frozenYesterday, "—", "—", "—", "—",
+      position.availableToday + position.availableYesterday, position.today + position.yesterday, "—"]);
+  }
+  return `<div class="toolbar compact"><input class="field" placeholder="对冲账号"><input class="field" placeholder="标的代码"><button class="btn primary" data-data-query>查询</button><button class="btn ghost" data-data-export>导出</button></div><div class="summary-cards">${cards.map(c=>`<div><span>${c[0]}</span><b>${c[1]}</b></div>`).join("")}</div>${tablePage(["对冲渠道","对冲账号","标的代码","标的名称","标的状态","持仓类型","今仓","昨仓","冻结数量","期初数量","日内开仓成交数量","日内平仓成交数量","持仓均价","可用数量","持仓数量","持仓市值"], rows)}`;
 }
 
 function tradingDayPage() {
