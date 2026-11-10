@@ -38,7 +38,9 @@ const futureEscape = value => String(value).replaceAll("&", "&amp;").replaceAll(
 const currentFuture = () => futuresContracts[futures.contract];
 const futureAutoOffsetLabel = contract => contract.split ? `自动（优先平${traderFuturesSettings.priority === "yesterday" ? "昨" : "今"}）` : "自动";
 const futureOffsetLabel = (offset, contract = currentFuture()) => offset === "auto" ? futureAutoOffsetLabel(contract) : ({ open: "开仓", close: contract.split ? "平昨" : "平仓", today: "平今" }[offset]);
-const futureRequestedOffsetLabel = contract => futureOffsetLabel(futures.offset, contract);
+// Demo account mapping. The production ticket will read the existing account permission.
+const futureIsTwoSide = () => futures.account === "交易账户02";
+const futureRequestedOffsetLabel = contract => futureIsTwoSide() ? "自动开平" : futureOffsetLabel(futures.offset, contract);
 const futureOrderOffsetLabel = row => {
   const contract = futuresContracts.find(item => item.code === row.code) || currentFuture();
   return row.offset === "平仓" && contract.split ? "平昨" : row.offset;
@@ -68,42 +70,22 @@ function futureOpenLimit() {
   return Math.max(0, Math.min(25, Math.floor(funds / (Math.max(1, futures.price) * contract.multiplier * contract.margin + contract.fee))));
 }
 
-function futureAvailable() {
+function futureOrderInputs() {
   const position = futurePosition(futures.direction === "buy" ? "空头" : "多头");
-  const total = position.availableToday + position.availableYesterday;
-  if (futures.offset === "auto") return total + futureOpenLimit();
-  if (futures.offset === "open") return futureOpenLimit();
-  if (futures.offset === "today" && currentFuture().split) return position.availableToday;
-  if (futures.offset === "close" && currentFuture().split) return position.availableYesterday;
-  return total;
+  return {
+    ...position, qty: futures.qty, offset: futureIsTwoSide() ? "auto" : futures.offset,
+    split: currentFuture().split, priority: traderFuturesSettings.priority, openLimit: futureOpenLimit(),
+  };
+}
+
+function futureAvailable() {
+  return FuturesOrderPlan.available(futureOrderInputs());
 }
 
 function futurePlan() {
-  const contract = currentFuture();
-  const position = futurePosition(futures.direction === "buy" ? "空头" : "多头");
   const direction = futures.direction === "buy" ? "买入" : "卖出";
-  if (futures.offset !== "auto") {
-    const offset = futures.offset === "open" ? "开仓" : futures.offset === "today" && contract.split ? "平今" : "平仓";
-    return [{ direction, offset, qty: futures.qty }];
-  }
-  const closeable = position.availableToday + position.availableYesterday;
-  const closing = Math.min(futures.qty, closeable);
-  const opening = futures.qty - closing;
-  if (!contract.split) {
-    return [
-      { direction, offset: "平仓", qty: closing },
-      { direction, offset: "开仓", qty: opening },
-    ].filter(row => row.qty > 0);
-  }
-  const priority = traderFuturesSettings.priority === "yesterday" ? "yesterday" : "today";
-  const secondary = priority === "today" ? "yesterday" : "today";
-  const firstQty = Math.min(closing, position[priority === "today" ? "availableToday" : "availableYesterday"]);
-  const secondQty = Math.min(closing - firstQty, position[secondary === "today" ? "availableToday" : "availableYesterday"]);
-  const closeRows = [
-    { direction, offset: priority === "today" ? "平今" : "平仓", qty: firstQty },
-    { direction, offset: secondary === "today" ? "平今" : "平仓", qty: secondQty },
-  ];
-  return [...closeRows, { direction, offset: "开仓", qty: opening }].filter(row => row.qty > 0);
+  const offsets = { open: "开仓", today: "平今", close: "平仓" };
+  return FuturesOrderPlan.plan(futureOrderInputs()).map(row => ({ direction, offset: offsets[row.offset], qty: row.qty }));
 }
 
 function tradingWorkspaceView() {
@@ -116,8 +98,8 @@ function futuresView() {
 
 function futureOrderList() {
   const query = futures.query;
-  const rows = futuresOrders.filter(row => !query || ((query.direction === "全部" || query.direction === row.direction) && (query.offset === "全部" || query.offset === (row.requested || row.offset)) && (query.contract === "全部" || query.contract === row.code)));
-  return `<section class="panel future-orders"><div class="future-panel-tabs">${["委托列表", "组合委托列表"].map(tab => `<button data-future-list="${tab}" class="${futures.listTab === tab ? "active" : ""}">${tab}</button>`).join("")}</div>${futures.listTab === "组合委托列表" ? futureCombinationList() : `<div class="future-filters"><label>标的代码<select data-future-filter="contract"><option>全部</option>${futuresContracts.map(c => `<option ${futures.filterContract === c.code ? "selected" : ""}>${c.code}</option>`).join("")}</select></label><label>买卖方向<select data-future-filter="direction">${["全部", "买入", "卖出"].map(x => `<option ${futures.filterDirection === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><label>开平标识<select data-future-filter="offset">${["全部", "自动（优先平今）", "自动（优先平昨）", "自动", "开仓", "平仓", "平今", "平昨"].map(x => `<option ${futures.filterOffset === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><button class="btn primary" data-future-query>筛选</button><button class="future-text-button" data-future-clear-filter>重置</button><span class="toolbar-spacer"></span><span class="future-day">交易日 <b>2026-11-05</b></span></div><div class="future-list-tools"><button class="btn ghost" data-future-cancel-selected>撤单</button><span class="toolbar-spacer"></span><span>数量单位　手</span><button class="future-text-button" data-future-modal="columns" aria-label="委托列表列设置">⚙ 列设置</button></div><div class="table-wrap future-table-scroll"><table class="data-table future-order-table"><thead><tr>${["序列", "操作", "合约代码", "买卖方向", "开平标识", "订单状态", "委托价格", "委托数量", "成交数量", "订单模式", "对冲渠道", "委托时间", "委托编号", "交易日"].map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.map((row, index) => `<tr data-future-order="${row.id}" class="${futures.selectedOrder === row.id ? "selected" : ""}"><td>${index + 1}</td><td>${row.status === "已报" || row.status === "待确认" ? `<button class="table-action" data-future-cancel="${row.id}">撤单</button>` : "—"}</td><td>${row.code}</td><td class="${row.direction === "买入" ? "buy" : "sell"}">${row.direction}</td><td><span class="offset-pill ${row.offset === "开仓" ? "opening" : "closing"}">${futureOrderOffsetLabel(row)}</span></td><td><span class="future-status ${row.status === "已成" ? "filled" : row.status === "已撤" ? "cancelled" : ""}">${row.status}</span></td><td class="number">${futureMoney(row.price)}</td><td class="number">${row.qty}</td><td class="number">${row.filled}</td><td>${row.mode}</td><td>${row.channel}</td><td>${row.time}</td><td>${row.id}</td><td>${row.day}</td></tr>`).join("")}</tbody></table>${rows.length ? "" : '<div class="future-empty">暂无符合条件的委托</div>'}</div><div class="future-table-footer"><span>共 ${rows.length} 条</span><span>第 1 / 1 页　　20条/页　　‹　›</span></div>`}</section>`;
+  const rows = futuresOrders.filter(row => !query || ((query.direction === "全部" || query.direction === row.direction) && (query.offset === "全部" || query.offset === row.requested || query.offset === futureOrderOffsetLabel(row)) && (query.contract === "全部" || query.contract === row.code)));
+  return `<section class="panel future-orders"><div class="future-panel-tabs">${["委托列表", "组合委托列表"].map(tab => `<button data-future-list="${tab}" class="${futures.listTab === tab ? "active" : ""}">${tab}</button>`).join("")}</div>${futures.listTab === "组合委托列表" ? futureCombinationList() : `<div class="future-filters"><label>标的代码<select data-future-filter="contract"><option>全部</option>${futuresContracts.map(c => `<option ${futures.filterContract === c.code ? "selected" : ""}>${c.code}</option>`).join("")}</select></label><label>买卖方向<select data-future-filter="direction">${["全部", "买入", "卖出"].map(x => `<option ${futures.filterDirection === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><label>开平标识<select data-future-filter="offset">${["全部", "自动（优先平今）", "自动（优先平昨）", "自动开平", "开仓", "平仓", "平今", "平昨"].map(x => `<option ${futures.filterOffset === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><button class="btn primary" data-future-query>筛选</button><button class="future-text-button" data-future-clear-filter>重置</button><span class="toolbar-spacer"></span><span class="future-day">交易日 <b>2026-11-05</b></span></div><div class="future-list-tools"><button class="btn ghost" data-future-cancel-selected>撤单</button><span class="toolbar-spacer"></span><span>数量单位　手</span><button class="future-text-button" data-future-modal="columns" aria-label="委托列表列设置">⚙ 列设置</button></div><div class="table-wrap future-table-scroll"><table class="data-table future-order-table"><thead><tr>${["序列", "操作", "合约代码", "买卖方向", "开平标识", "订单状态", "委托价格", "委托数量", "成交数量", "订单模式", "对冲渠道", "委托时间", "委托编号", "交易日"].map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.map((row, index) => `<tr data-future-order="${row.id}" class="${futures.selectedOrder === row.id ? "selected" : ""}"><td>${index + 1}</td><td>${row.status === "已报" || row.status === "待确认" ? `<button class="table-action" data-future-cancel="${row.id}">撤单</button>` : "—"}</td><td>${row.code}</td><td class="${row.direction === "买入" ? "buy" : "sell"}">${row.direction}</td><td><span class="offset-pill ${row.offset === "开仓" ? "opening" : "closing"}">${futureOrderOffsetLabel(row)}</span></td><td><span class="future-status ${row.status === "已成" ? "filled" : row.status === "已撤" ? "cancelled" : ""}">${row.status}</span></td><td class="number">${futureMoney(row.price)}</td><td class="number">${row.qty}</td><td class="number">${row.filled}</td><td>${row.mode}</td><td>${row.channel}</td><td>${row.time}</td><td>${row.id}</td><td>${row.day}</td></tr>`).join("")}</tbody></table>${rows.length ? "" : '<div class="future-empty">暂无符合条件的委托</div>'}</div><div class="future-table-footer"><span>共 ${rows.length} 条</span><span>第 1 / 1 页　　20条/页　　‹　›</span></div>`}</section>`;
 }
 
 function futureCombinationList() {
@@ -149,8 +131,8 @@ function futureOrderForm() {
   const isBuy = futures.direction === "buy";
   const p = futurePosition(isBuy ? "空头" : "多头");
   const contract = currentFuture();
-  const availableLabel = futures.offset === "auto" ? (isBuy ? "可买数量" : "可卖数量") : futures.offset === "open" ? (isBuy ? "可买开" : "可卖开") : futures.offset === "today" && contract.split ? (isBuy ? "可买平今" : "可卖平今") : futures.offset === "close" && contract.split ? (isBuy ? "可买平昨" : "可卖平昨") : (isBuy ? "可买平" : "可卖平");
-  const label = `${isBuy ? "买入" : "卖出"}${futureOffsetLabel(futures.offset, contract)}`;
+  const availableLabel = futureIsTwoSide() || futures.offset === "auto" ? (isBuy ? "可买数量" : "可卖数量") : futures.offset === "open" ? (isBuy ? "可买开" : "可卖开") : futures.offset === "today" && contract.split ? (isBuy ? "可买平今" : "可卖平今") : futures.offset === "close" && contract.split ? (isBuy ? "可买平昨" : "可卖平昨") : (isBuy ? "可买平" : "可卖平");
+  const label = `${isBuy ? "买入" : "卖出"}${futureIsTwoSide() ? "" : futureOffsetLabel(futures.offset, contract)}`;
   const offsets = contract.split
     ? [{value:"auto",label:futureAutoOffsetLabel(contract)}, {value:"open",label:"开仓"}, {value:"today",label:"平今"}, {value:"close",label:"平昨"}]
     : [{value:"open",label:"开仓"}, {value:"close",label:"平仓"}];
@@ -162,7 +144,7 @@ function futureOrderForm() {
     ${futureTypeTabs()}
     <div class="future-ticket-scroll">
       <div class="future-ticket-context"><span>交易日 <b>2026-11-05</b></span><span>${currentFuture().exchange}</span></div>
-      ${futureSelect("交易账户", "account", ["交易账户01", "交易账户02"], futures.account)}
+      ${futureSelect("交易账户", "account", [{value:"交易账户01",label:"交易账户01（4-side）"}, {value:"交易账户02",label:"交易账户02（2-side）"}], futures.account)}
       ${futureSelect("交易对手名称", "customer", ["演示交易对手01", "演示交易对手02"], futures.customer)}
       ${futureSelect("资金账号", "fund", ["DEMO-F01", "DEMO-F02"], futures.fund)}
       ${futureSelect("对冲渠道", "channel", ["渠道A", "渠道B"], futures.channel)}
@@ -172,17 +154,17 @@ function futureOrderForm() {
       ${futureSelect("合约代码", "contract", futuresContracts.map((c, i) => ({value:i,label:`${c.code} ${c.name}`})), futures.contract)}
       <div class="future-local-entry">
         <div class="future-field future-direction-row"><span>买卖方向</span><div class="future-directions">${["buy", "sell"].map(side => `<button class="${side} ${futures.direction === side ? "active" : ""}" aria-pressed="${futures.direction === side}" data-future-direction="${side}">${side === "buy" ? "买入" : "卖出"}</button>`).join("")}</div></div>
-        <div class="future-field"><span>开平标识</span><div class="future-offsets count-${offsets.length}" role="group" aria-label="开平标识">${offsets.map(o => `<button class="${futures.offset === o.value ? "active" : ""}" aria-pressed="${futures.offset === o.value}" title="${o.value === "auto" ? `自动拆单，${futureAutoOffsetLabel(contract)}` : o.label}" data-future-offset="${o.value}">${o.label}</button>`).join("")}</div></div>
+        ${futureIsTwoSide() ? "" : `<div class="future-field"><span>开平标识</span><div class="future-offsets count-${offsets.length}" role="group" aria-label="开平标识">${offsets.map(o => `<button class="${futures.offset === o.value ? "active" : ""}" aria-pressed="${futures.offset === o.value}" title="${o.value === "auto" ? `自动拆单，${futureAutoOffsetLabel(contract)}` : o.label}" data-future-offset="${o.value}">${o.label}</button>`).join("")}</div></div>`}
         <div class="future-position-availability"><span class="future-available-main">${availableLabel} <b id="futureAvailableQty">${futureAvailable()}</b> 手</span>${positionBreakdown}</div>
         ${futureStepper("委托价格", "price", futures.price, currentFuture().tick)}
         ${futureStepper("委托数量", "qty", futures.qty, 1)}
         <div class="future-fractions">${[[.25, "1/4"], [1/3,"1/3"], [.5,"1/2"], [1,"全仓"]].map(([v,t]) => `<button data-future-fraction="${v}">${t}</button>`).join("")}</div>
         <details class="ticket-preset"><summary>常用数量</summary>${TicketSettings.quantityButtons(traderFuturesSettings.quantities, "data-future-preset")}</details>
       </div>
-      ${futures.error ? `<div class="future-error" role="alert">${futureEscape(futures.error)}</div>` : ""}
       <div class="future-ticket-options"><label><input type="checkbox" data-future-check="noApproval" ${futures.noApproval ? "checked" : ""}>无需审批</label><button class="future-text-button" data-future-expand>${futures.expanded ? "收起 ⌃" : "更多 ⌄"}</button></div>
       ${futures.expanded ? `<div class="future-extra">${futureSelect("算法类型", "algorithm", ["无", "TWAP"], futures.algorithm)}<label class="future-inline-check"><input type="checkbox" data-future-check="manual" ${futures.manual ? "checked" : ""}> 手工成交</label><label class="future-field"><span>备注</span><input data-future-remark value="${futureEscape(futures.remark)}" maxlength="120"></label></div>` : ""}
     </div>
+    ${futures.error ? `<div class="future-error" role="alert">${futureEscape(futures.error)}</div>` : ""}
     <div class="future-ticket-footer"><button class="future-reset" data-future-settings aria-label="期货下单自定义设置">⚙</button><button class="future-reset" data-future-reset aria-label="重置下单">↺</button><button class="future-submit ${isBuy ? "buy" : "sell"}" data-future-submit>${label}<span>${futures.qty} 手</span></button></div>
   </section>`;
 }
@@ -219,7 +201,7 @@ function futureModal() {
   } else {
     const c = currentFuture();
     title = "期货订单确认";
-    body = `<dl class="future-confirm-info"><dt>交易账户</dt><dd>${futures.account}</dd><dt>交易日</dt><dd>2026-11-05</dd><dt>合约代码</dt><dd>${c.code} ${c.name}</dd><dt>对冲渠道</dt><dd>${futures.channel}</dd><dt>买卖方向</dt><dd>${futures.direction === "buy" ? "买入" : "卖出"}</dd><dt>开平标识</dt><dd>${futureRequestedOffsetLabel(c)}</dd><dt>委托价格</dt><dd>${futureMoney(futures.price)}</dd><dt>委托数量</dt><dd>${futures.qty} 手</dd><dt>订单模式</dt><dd>${futures.mode}</dd></dl><table class="data-table future-plan"><thead><tr><th>买卖方向</th><th>报送开平</th><th>数量（手）</th></tr></thead><tbody>${futurePlan().map(row => `<tr><td>${row.direction}</td><td>${row.offset === "平仓" && c.split ? "平昨" : row.offset}</td><td>${row.qty}</td></tr>`).join("")}</tbody></table>`;
+    body = `<dl class="future-confirm-info"><dt>交易账户</dt><dd>${futures.account}</dd><dt>交易日</dt><dd>2026-11-05</dd><dt>合约代码</dt><dd>${c.code} ${c.name}</dd><dt>对冲渠道</dt><dd>${futures.channel}</dd><dt>买卖方向</dt><dd>${futures.direction === "buy" ? "买入" : "卖出"}</dd>${futureIsTwoSide() ? "" : `<dt>开平标识</dt><dd>${futureRequestedOffsetLabel(c)}</dd>`}<dt>委托价格</dt><dd>${futureMoney(futures.price)}</dd><dt>委托数量</dt><dd>${futures.qty} 手</dd><dt>订单模式</dt><dd>${futures.mode}</dd></dl><table class="data-table future-plan"><thead><tr><th>买卖方向</th><th>报送开平</th><th>数量（手）</th></tr></thead><tbody>${futurePlan().map(row => `<tr><td>${row.direction}</td><td>${row.offset === "平仓" && c.split ? "平昨" : row.offset}</td><td>${row.qty}</td></tr>`).join("")}</tbody></table>`;
     footer = '<button class="btn ghost" data-future-close-modal>返回修改</button><button class="btn primary" data-future-confirm>确认提交</button>';
   }
   return `<div class="modal-mask future-modal" role="dialog" aria-modal="true" aria-labelledby="futureModalTitle"><section class="dialog"><header><h3 id="futureModalTitle">${title}</h3><button class="modal-close" data-future-close-modal aria-label="关闭">×</button></header><div class="dialog-body">${body}</div><footer>${footer}</footer></section></div>`;
@@ -231,8 +213,7 @@ function futureValidate() {
   const c = currentFuture();
   if (!Number.isFinite(futures.price) || futures.price <= 0) return "请输入有效的委托价格。";
   if (Math.abs(futures.price / c.tick - Math.round(futures.price / c.tick)) > 1e-6) return `委托价格须为最小变动价位 ${c.tick} 的整数倍。`;
-  if (futures.qty > futureAvailable()) return `可用数量不足，当前最多可委托 ${futureAvailable()} 手。`;
-  return "";
+  return FuturesOrderPlan.rejection(futureOrderInputs());
 }
 
 function futureSubmit() {
@@ -248,9 +229,9 @@ function futureConfirm() {
   const plan = futurePlan();
   const reserved = { ...(futuresReservations.get(position.key) || { today: 0, yesterday: 0 }) };
   const existingReserved = futuresReservations.get(position.key) || { today: 0, yesterday: 0 };
-  const ids = [];
+  const submitted = [];
   for (const row of plan) {
-    const id = `F20261105${String(futuresOrders.length + 1).padStart(3, "0")}`;
+    const id = `F20261105${String(futuresOrders.length + submitted.length + 1).padStart(3, "0")}`;
     let today = 0;
     let yesterday = 0;
     if (row.offset === "平今") today = row.qty;
@@ -266,11 +247,11 @@ function futureConfirm() {
     }
     reserved.today += today;
     reserved.yesterday += yesterday;
-    futuresOrders.unshift({ id, code: currentFuture().code, direction: row.direction, offset: row.offset, requested: futureRequestedOffsetLabel(currentFuture()), price: futures.price, qty: row.qty, filled: 0, status: futures.mode === "HighTouch" ? "待确认" : "已报", mode: futures.mode, time: "14:59:59", day: "2026-11-05", channel: futures.channel, frame: futures.frame, reservation: { key: position.key, today, yesterday } });
-    ids.push(id);
+    submitted.push({ id, code: currentFuture().code, direction: row.direction, offset: row.offset, requested: futureRequestedOffsetLabel(currentFuture()), price: futures.price, qty: row.qty, filled: 0, status: futures.mode === "HighTouch" ? "待确认" : "已报", mode: futures.mode, time: "14:59:59", day: "2026-11-05", channel: futures.channel, frame: futures.frame, reservation: { key: position.key, today, yesterday } });
   }
+  futuresOrders.unshift(...submitted);
   futuresReservations.set(position.key, reserved);
-  futures.selectedOrder = ids[0];
+  futures.selectedOrder = submitted[0].id;
   futures.query = null;
   futures.modal = null;
   if (!traderFuturesSettings.keep.includes("交易账户")) futures.account = "交易账户01";
@@ -317,6 +298,7 @@ function bindFuturesInteractions() {
   document.querySelectorAll("[data-future-select]").forEach(select => select.addEventListener("change", () => {
     const key = select.dataset.futureSelect;
     futures[key] = key === "contract" ? Number(select.value) : select.value;
+    if (key === "account") futures.offset = "open";
     if (key === "contract") {
       futures.price = currentFuture().price;
       if (!currentFuture().split && ["today", "auto"].includes(futures.offset)) futures.offset = "close";
