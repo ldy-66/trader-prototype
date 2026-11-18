@@ -26,7 +26,7 @@ function select(featureId, selectedSide) {
  });
  byId("title").textContent=current.name;
  byId("clients").innerHTML=current.sides.map(client=>`<button class="client ${client===side?"active":""}" data-side="${client}" aria-pressed="${client===side}">${labels[client]}</button>`).join("");
- const url=`${side}/index.html?feature=${current.id}`;
+ const url=`${side}/index.html?feature=${current.id}${current.id === 3 ? "&v=20261118-board-menu" : ""}`;
  byId("loadStatus").textContent="正在打开";
  byId("openPage").href=url;
  frame.src=url;

@@ -411,8 +411,8 @@ function renderHoldingsPage() {
     dataWorkspace.querySelectorAll(".holdings-filter-row input:not([data-board])").forEach((input, index) => { input.value = filterValues[index] ?? ""; });
     const menu = dataWorkspace.querySelector(".board-multi");
     if (menu) {
-      menu.open = true;
-      [...menu.querySelectorAll("[data-board]")].find(option => option.dataset.board === focused)?.focus();
+      HoldingsBoards.open(menu);
+      [...menu.querySelectorAll("[data-board]")].find(option => option.dataset.board === focused)?.focus({preventScroll: true});
     }
   });
   dataWorkspace.querySelector("[data-query-holdings]").addEventListener("click", () => notify("持仓信息查询条件已应用（原型）"));
