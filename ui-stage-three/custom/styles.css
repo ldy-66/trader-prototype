@@ -105,6 +105,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .holdings-filter-row .custom-export-button { border: 1px solid var(--blue); color: var(--blue); background: #fff; }
 .holdings-controls { height: 38px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid var(--line); }
 .holdings-market-tabs, .holdings-mode-switch { height: 100%; display: flex; align-items: center; gap: 10px; }
+.data-workspace > nav.holdings-market-tabs { height: 36px; flex: none; padding: 0 8px; border-bottom: 1px solid var(--line); }
 .holdings-market-tabs button { min-width: 68px; height: 28px; border: 0; background: transparent; }
 .holdings-market-tabs button.active { color: #fff; background: #aab0b7; }
 .holdings-mode-switch button { display: inline-flex; align-items: center; gap: 5px; border: 0; padding: 3px 2px; color: #272d33; background: transparent; }
@@ -112,7 +113,8 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .radio-dot { width: 16px; height: 16px; display: inline-grid; place-items: center; border: 1px solid #737d86; border-radius: 50%; }
 .holdings-mode-switch button.active .radio-dot::after { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); content: ""; }
 .holdings-grid-wrap { min-height: 0; flex: 1; overflow: auto; padding: 0 8px 8px; }
-.holdings-table { min-width: 1380px; }
+.data-table.holdings-table { min-width: 1380px; table-layout: auto; }
+.holdings-table th { padding: 0 8px; }
 .holdings-table th:first-child, .holdings-table td:first-child { width: 48px; text-align: center; }
 .top-grid { min-height: 0; display: grid; grid-template-columns: minmax(400px, 1.58fr) minmax(265px, .98fr) minmax(290px, 1fr); gap: 5px; }
 .panel { min-width: 0; min-height: 0; overflow: hidden; border-radius: 6px; background: var(--panel); box-shadow: 0 0 0 1px #edf0f2; }
