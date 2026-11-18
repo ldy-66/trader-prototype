@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI优化三阶段原型</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px "Microsoft YaHei",Arial,sans-serif;color:#243447;background:#f2f5f8}header{height:62px;display:flex;align-items:center;gap:20px;padding:0 24px;background:#fff;border-bottom:1px solid #dce2e9}h1{font-size:18px;margin:0}header span{font-size:12px;color:#6a788a}.layout{display:grid;grid-template-columns:245px minmax(0,1fr);height:calc(100dvh - 62px)}aside{padding:18px 12px;background:#fff;border-right:1px solid #dce2e9;overflow:auto}.feature{display:block;text-align:left;width:100%;border:0;background:transparent;border-radius:5px;padding:12px 14px;margin-bottom:5px;color:inherit;font:inherit;cursor:pointer;line-height:1.5}.feature.active{background:#eaf3ff;color:#1260c4;font-weight:600}.feature:hover{background:#f0f5fa}main{min-width:0;display:flex;flex-direction:column}.toolbar{min-height:61px;padding:10px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #dce2e9}h2{font-size:14px;margin:0;flex:1}.clients{display:flex;gap:4px}button.client{font:inherit;cursor:pointer;border:1px solid #ccd5df;background:white;padding:6px 12px;border-radius:3px}.client.active{background:#1769ca;border-color:#1769ca;color:white}a{color:#1260c4;text-decoration:none;font-size:12px}iframe{display:block;width:100%;flex:1;border:0;background:white}#loadStatus{font-size:12px;color:#63768b}@media(max-width:800px){header{padding:0 12px;gap:8px}header span{display:none}.layout{grid-template-columns:176px minmax(0,1fr)}aside{padding:10px 5px}.feature{padding:9px 8px;font-size:12px}.toolbar{flex-wrap:wrap}h2{min-width:100%}.client{font-size:12px!important}}
+</style>
+</head>
+<body>
+<header><h1>UI优化三阶段</h1><span>交互原型 · 演示数据</span></header>
+<div class="layout">
+<aside aria-label="功能点"><nav id="features"></nav></aside>
+<main>
+ <div class="toolbar"><h2 id="title"></h2><div id="clients" class="clients" aria-label="适用端"></div><span id="loadStatus" role="status"></span><a id="openPage" target="_blank" rel="noopener">单独打开</a></div>
+ <iframe id="prototype" title="UI优化交互原型"></iframe>
+</main>
+</div>
+<script src="hub.js"></script>
+</body>
+</html>

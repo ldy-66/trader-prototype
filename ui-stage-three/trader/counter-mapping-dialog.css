@@ -1,0 +1,10 @@
+.mapping-dialog { width: 386px; padding: 0; border: 1px solid #71a2f0; border-radius: 8px; background: #fff; color: #333; font: 13px "Microsoft YaHei", sans-serif; }
+.mapping-dialog::backdrop { background: #1a283846; }
+.mapping-dialog header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; padding: 6px 12px; font-size: 14px; }
+.mapping-dialog .close-mapping { padding: 0 4px; background: transparent; border: 0; font-size: 19px; cursor: pointer; }
+.mapping-dialog form { padding: 24px 20px 38px; }
+.mapping-dialog label { display: grid; grid-template-columns: 88px minmax(0,1fr); white-space: nowrap; font-size: 12px; gap: 6px; align-items: center; min-height: 35px; }
+.mapping-dialog select, .mapping-dialog input { width: 100%; min-width: 0; height: 26px; box-sizing: border-box; padding: 0 8px; border: 1px solid #c9ccd3; border-radius: 4px; background: white; color: inherit; font: 13px "Microsoft YaHei", sans-serif; }
+.mapping-dialog footer { display: flex; justify-content: center; gap: 20px; margin-top: 23px; }
+.mapping-dialog footer button { width: 80px; min-height: 28px; border: 0; border-radius: 5px; background: #387df6; color: #fff; cursor: pointer; font: inherit; }
+
